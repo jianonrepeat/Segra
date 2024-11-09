@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ReCaps.Backend
+namespace ReCaps.Backend.Utils
 {
     public static class MessageUtils
     {

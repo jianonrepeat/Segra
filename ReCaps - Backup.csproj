@@ -23,17 +23,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Compile Remove="libobs-sharp\libobs-sharp.example\**" />
-	  <EmbeddedResource Remove="libobs-sharp\libobs-sharp.example\**" />
-	  <None Remove="libobs-sharp\libobs-sharp.example\**" />
-	</ItemGroup>
-
-	<ItemGroup>
 	  <None Remove="Resources\app.png" />
 	  <None Remove="Resources\icon.ico" />
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Folder Include="Backend\NewFolder\" />
+	  <Folder Include="Backend\OBS\" />
 	  <Folder Include="UserInterface\app\Pages\" />
 	</ItemGroup>
 

@@ -1,0 +1,3 @@
+[submodule "Backend/OBS/libobs-sharp"]
+	path = Backend/OBS/libobs-sharp
+	url = https://github.com/lulzsun/libobs-sharp.git
