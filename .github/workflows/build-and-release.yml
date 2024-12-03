@@ -32,25 +32,30 @@ jobs:
           git fetch --tags
         
           # Check if there are any tags
-          if git tag | grep .; then
+          $tags = git tag
+          if ($tags) {
             # Get the latest tag and remove the 'v' prefix
-            latest_tag=$(git describe --tags --abbrev=0 | sed 's/^v//')
-          else
+            $latestTag = (git describe --tags --abbrev=0) -replace '^v', ''
+          } else {
             # Fallback to 0.0.0 if no tags exist
-            latest_tag="0.0.0"
-          fi
+            $latestTag = "0.0.0"
+          }
         
-          # Split version into components
-          IFS='.' read -r major minor patch <<< "$latest_tag"
+          # Split the version into components
+          $versionParts = $latestTag.Split('.')
+          $major = [int]$versionParts[0]
+          $minor = [int]$versionParts[1]
+          $patch = [int]$versionParts[2]
         
-          # Increment patch version
-          patch=$((patch + 1))
+          # Increment the patch version
+          $patch++
         
           # Combine into new version
-          new_version="v$major.$minor.$patch"
+          $newVersion = "v$major.$minor.$patch"
         
           # Output the new version
-          echo "new_version=$new_version" >> $GITHUB_ENV
+          echo "new_version=$newVersion" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
+        shell: pwsh
 
 
       - name: Build the App
