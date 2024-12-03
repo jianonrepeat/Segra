@@ -28,9 +28,9 @@ jobs:
       - name: Determine Version
         id: get_version
         run: |
-          # Fetch all tags
-          git fetch --tags
-
+          # Fetch all tags without recursing into submodules
+          git fetch --tags --no-recurse-submodules
+      
           # Check if there are any tags
           $tags = git tag
           if ($tags -ne $null -and $tags.Count -gt 0) {
@@ -43,25 +43,26 @@ jobs:
             # Fallback to 0.0.0 if no tags exist
             $latestTag = "0.0.0"
           }
-
+      
           # Ensure $latestTag is a string
           $latestTag = [string]$latestTag
-
+      
           # Split the version into components
           $versionParts = $latestTag.Split('.')
           $major = [int]$versionParts[0]
           $minor = [int]$versionParts[1]
           $patch = [int]$versionParts[2]
-
+      
           # Increment the patch version
           $patch++
-
+      
           # Combine into new version
           $newVersion = "v$major.$minor.$patch"
-
+      
           # Output the new version
           echo "new_version=$newVersion" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
         shell: pwsh
+
 
 
 
