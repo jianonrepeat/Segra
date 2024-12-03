@@ -61,14 +61,15 @@ jobs:
           echo "new_version=$newVersion" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
         shell: pwsh
 
-        # Add Node.js setup step
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '22'
+      - name: Install vpk as .NET Global Tool
+        run: |
+          # Install vpk globally
+          dotnet tool install -g vpk
 
-      - name: Install vpk
-        run: npm install -g vpk
+          # Add the .NET global tools path to the environment PATH
+          $env:PATH += ";$env:USERPROFILE\.dotnet\tools"
+
+        shell: pwsh
 
       - name: Build the App
         run: |
