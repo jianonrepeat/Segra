@@ -32,7 +32,7 @@ jobs:
           # Check if there are any tags
           $tags = git tag
           if ($tags -ne $null -and $tags.Count -gt 0) {
-            # Get the latest tag and ensure it's a single string
+            # Get the latest tag and remove the leading 'v' if present
             $latestTag = (git describe --tags --abbrev=0 2>$null) -replace '^v', ''
             if (-not $latestTag) {
               $latestTag = "0.0.0"
@@ -54,8 +54,8 @@ jobs:
           # Increment the patch version
           $patch++
 
-          # Combine into new version
-          $newVersion = "v$major.$minor.$patch"
+          # Combine into new version without 'v' prefix to comply with vpk
+          $newVersion = "$major.$minor.$patch"
 
           # Output the new version
           echo "new_version=$newVersion" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
@@ -69,6 +69,8 @@ jobs:
           # Add the .NET global tools path to the environment PATH
           $env:PATH += ";$env:USERPROFILE\.dotnet\tools"
 
+          # Verify vpk installation
+          vpk --version
         shell: pwsh
 
       - name: Build the App
@@ -81,12 +83,13 @@ jobs:
 
       - name: Package with vpk
         run: vpk pack -u dev.segergren.recaps -v ${{ env.new_version }} -p ./publish -e ReCaps.exe
+        shell: pwsh
 
       - name: Create a Git Tag
         run: |
-          # Tag the repository with the new version
-          git tag ${{ env.new_version }}
-          git push origin ${{ env.new_version }}
+          git tag v${{ env.new_version }}
+          git push origin v${{ env.new_version }}
+        shell: pwsh
 
       - name: Upload Release Artifact
         uses: actions/upload-artifact@v3
@@ -109,8 +112,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ env.new_version }}
-          release_name: Release ${{ env.new_version }}
+          tag_name: v${{ env.new_version }}
+          release_name: Release v${{ env.new_version }}
           draft: false
           prerelease: false
 
