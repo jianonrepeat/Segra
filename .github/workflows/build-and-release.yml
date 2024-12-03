@@ -68,9 +68,6 @@ jobs:
 
           # Add the .NET global tools path to the environment PATH
           $env:PATH += ";$env:USERPROFILE\.dotnet\tools"
-
-          # Verify vpk installation
-          vpk --version
         shell: pwsh
 
       - name: Build the App
