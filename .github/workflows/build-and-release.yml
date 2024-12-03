@@ -1,0 +1,97 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0'
+
+      - name: Determine Version
+        id: get_version
+        run: |
+          # Fetch all tags
+          git fetch --tags
+          
+          # Get the latest tag or fallback to 0.0.0 if no tags exist
+          latest_tag=$(git describe --tags --abbrev=0 || echo "v0.0.0")
+          
+          # Remove 'v' prefix for version processing
+          version=${latest_tag#v}
+          
+          # Split the version into components
+          IFS='.' read -r major minor patch <<< "$version"
+          
+          # Increment the patch version (e.g., 1.0.0 -> 1.0.1)
+          patch=$((patch + 1))
+          
+          # Combine into the new version
+          new_version="$major.$minor.$patch"
+          
+          # Output the new version prefixed with 'v'
+          echo "v$new_version" > new_version.txt
+          echo "new_version=v$new_version" >> $GITHUB_ENV
+
+      - name: Build the App
+        run: |
+          dotnet build --configuration Release
+
+      - name: Publish the App
+        run: |
+          dotnet publish -c Release --self-contained -r win-x64 -o publish
+
+      - name: Package with vpk
+        run: vpk pack -u dev.segergren.recaps -v ${{ env.new_version }} -p ./publish -e ReCaps.exe
+
+      - name: Create a Git Tag
+        run: |
+          # Tag the repository with the new version
+          git tag ${{ env.new_version }}
+          git push origin ${{ env.new_version }}
+
+      - name: Upload Release Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ReCaps
+          path: ./publish
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ReCaps
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.new_version }}
+          release_name: Release ${{ env.new_version }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./publish/ReCaps.exe
+          asset_name: ReCaps.exe
+          asset_content_type: application/octet-stream
