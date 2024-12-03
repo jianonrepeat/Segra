@@ -12,6 +12,13 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Checkout Submodules
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --recursive
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v3
