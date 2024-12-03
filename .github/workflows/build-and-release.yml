@@ -107,6 +107,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write
+
     steps:
       - name: Download Build Artifact
         uses: actions/download-artifact@v3
