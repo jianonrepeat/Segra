@@ -61,9 +61,14 @@ jobs:
           echo "new_version=$newVersion" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
         shell: pwsh
 
+        # Add Node.js setup step
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
 
-
-
+      - name: Install vpk
+        run: npm install -g vpk
 
       - name: Build the App
         run: |
