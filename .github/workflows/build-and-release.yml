@@ -129,7 +129,7 @@ jobs:
 
       - name: List Publish Directory Contents
         run: |
-          ls -la ./publish
+          ls -la ./ReCaps
         shell: pwsh
 
       - name: Upload Release Assets
@@ -138,6 +138,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./publish/ReCaps.exe
+          asset_path: ./ReCaps/ReCaps.exe
           asset_name: ReCaps.exe
           asset_content_type: application/octet-stream
