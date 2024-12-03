@@ -12,6 +12,9 @@ jobs:
     permissions:
       contents: write
 
+    outputs:
+      new_version: ${{ steps.get_version.outputs.new_version }}
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -62,6 +65,7 @@ jobs:
 
           # Output the new version
           echo "new_version=$newVersion" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
+          echo "new_version=$newVersion" >> $env:GITHUB_OUTPUT
         shell: pwsh
 
       - name: Configure Git User
@@ -122,15 +126,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ env.new_version }}
-          release_name: Release v${{ env.new_version }}
+          tag_name: v${{ needs.build.outputs.new_version }}
+          release_name: Release v${{ needs.build.outputs.new_version }}
           draft: false
           prerelease: false
-
-      - name: List Publish Directory Contents
-        run: |
-          ls -la ./ReCaps
-        shell: pwsh
 
       - name: List Files in Current Directory
         run: ls -la
