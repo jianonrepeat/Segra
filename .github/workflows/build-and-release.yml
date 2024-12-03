@@ -23,25 +23,25 @@ jobs:
         run: |
           # Fetch all tags
           git fetch --tags
-          
+
           # Get the latest tag or fallback to 0.0.0 if no tags exist
-          latest_tag=$(git describe --tags --abbrev=0 || echo "v0.0.0")
-          
-          # Remove 'v' prefix for version processing
-          version=${latest_tag#v}
-          
-          # Split the version into components
-          IFS='.' read -r major minor patch <<< "$version"
-          
-          # Increment the patch version (e.g., 1.0.0 -> 1.0.1)
-          patch=$((patch + 1))
-          
+          $latestTag = (git describe --tags --abbrev=0) -replace '^v', ''
+          if (-not $latestTag) { $latestTag = "0.0.0" }
+
+          # Split version into components
+          $versionParts = $latestTag.Split('.')
+          $major = [int]$versionParts[0]
+          $minor = [int]$versionParts[1]
+          $patch = [int]$versionParts[2]
+
+          # Increment patch version
+          $patch++
+
           # Combine into the new version
-          new_version="$major.$minor.$patch"
+          $newVersion = "v$major.$minor.$patch"
           
-          # Output the new version prefixed with 'v'
-          echo "v$new_version" > new_version.txt
-          echo "new_version=v$new_version" >> $GITHUB_ENV
+          # Output the new version
+          echo "new_version=$newVersion" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
 
       - name: Build the App
         run: |
