@@ -12,9 +12,6 @@ jobs:
     permissions:
       contents: write
 
-    outputs:
-      new_version: ${{ steps.get_version.outputs.new_version }}
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -26,7 +23,6 @@ jobs:
         run: |
           git submodule sync --recursive
           git submodule update --init --recursive
-        shell: pwsh
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v3
@@ -65,7 +61,7 @@ jobs:
           $newVersion = "$major.$minor.$patch"
 
           # Output the new version
-          echo "::set-output name=new_version::$newVersion"
+          echo "new_version=$newVersion" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
         shell: pwsh
 
       - name: Configure Git User
@@ -80,27 +76,25 @@ jobs:
           dotnet tool install -g vpk
 
           # Add the .NET global tools path to the environment PATH
-          echo "${{ env.USERPROFILE }}\.dotnet\tools" >> $GITHUB_PATH
+          $env:PATH += ";$env:USERPROFILE\.dotnet\tools"
         shell: pwsh
 
       - name: Build the App
         run: |
           dotnet build --configuration Release
-        shell: pwsh
 
       - name: Publish the App
         run: |
           dotnet publish -c Release --self-contained -r win-x64 -o publish
-        shell: pwsh
 
       - name: Package with vpk
-        run: vpk pack -u dev.segergren.recaps -v ${{ steps.get_version.outputs.new_version }} -p ./publish -e ReCaps.exe
+        run: vpk pack -u dev.segergren.recaps -v ${{ env.new_version }} -p ./publish -e ReCaps.exe
         shell: pwsh
 
       - name: Create a Git Tag
         run: |
-          git tag v${{ steps.get_version.outputs.new_version }}
-          git push origin v${{ steps.get_version.outputs.new_version }}
+          git tag v${{ env.new_version }}
+          git push origin v${{ env.new_version }}
         shell: pwsh
 
       - name: Upload Release Artifact
@@ -128,10 +122,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ needs.build.outputs.new_version }}
-          release_name: Release v${{ needs.build.outputs.new_version }}
+          tag_name: v${{ env.new_version }}
+          release_name: Release v${{ env.new_version }}
           draft: false
           prerelease: false
+
+      - name: List Publish Directory Contents
+        run: |
+          ls -la ./publish
+        shell: pwsh
 
       - name: Upload Release Assets
         uses: actions/upload-release-asset@v1
