@@ -4,6 +4,7 @@ using ReCaps.Backend.Utils;
 using ReCaps.Models;
 using Serilog;
 using System.Drawing;
+using Velopack;
 
 namespace Photino.ReCaps
 {
@@ -27,6 +28,8 @@ namespace Photino.ReCaps
                 .WriteTo.Debug()
                 .WriteTo.File("logs/application.log", rollingInterval: RollingInterval.Day)
                 .CreateLogger();
+
+            VelopackApp.Build().Run();
 
             try
             {
