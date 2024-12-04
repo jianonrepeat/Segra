@@ -32,6 +32,11 @@ jobs:
         with:
           dotnet-version: '8.0'
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
       - name: Determine Version
         id: get_version
         run: |
@@ -81,6 +86,16 @@ jobs:
 
           # Add the .NET global tools path to the environment PATH
           $env:PATH += ";$env:USERPROFILE\.dotnet\tools"
+        shell: pwsh
+
+      - name: Install Frontend Dependencies
+        working-directory: ./UserInterface
+        run: npm install
+        shell: pwsh
+
+      - name: Build Frontend
+        working-directory: ./UserInterface
+        run: npm run build
         shell: pwsh
 
       - name: Build the App
