@@ -140,6 +140,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./output/ReCaps-Setup.exe
-          asset_name: ReCaps.exe
+          asset_path: ./dev.segergren.recaps-win-Setup.exe
+          asset_name: ReCaps-Setup.exe
           asset_content_type: application/octet-stream
