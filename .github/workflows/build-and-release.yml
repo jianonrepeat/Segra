@@ -92,7 +92,7 @@ jobs:
           dotnet publish -c Release --self-contained -r win-x64 -o publish
 
       - name: Package with vpk
-        run: vpk pack -u dev.segergren.recaps -v ${{ env.new_version }} -p ./publish -e ReCaps.exe
+        run: vpk pack -u dev.segergren.recaps -v ${{ env.new_version }} -p ./publish -e ReCaps.exe -o ./output
         shell: pwsh
 
       - name: Create a Git Tag
@@ -105,7 +105,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ReCaps
-          path: ./publish
+          path: ./output
 
   release:
     needs: build
@@ -133,13 +133,13 @@ jobs:
 
       - name: List Files in Current Directory
         run: ls -la
-
+      
       - name: Upload Release Assets
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./ReCaps.exe
+          asset_path: ./output/ReCaps-Setup.exe
           asset_name: ReCaps.exe
           asset_content_type: application/octet-stream
