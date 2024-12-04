@@ -89,12 +89,12 @@ jobs:
         shell: pwsh
 
       - name: Install Frontend Dependencies
-        working-directory: ./UserInterface
+        working-directory: ./Frontend
         run: npm install
         shell: pwsh
 
       - name: Build Frontend
-        working-directory: ./UserInterface
+        working-directory: ./Frontend
         run: npm run build
         shell: pwsh
 
