@@ -40,7 +40,7 @@ namespace Photino.ReCaps
                     .CreateStaticFileServer(args, out string baseUrl)
                     .RunAsync();
 
-                string appUrl = IsDebugMode ? "http://localhost:3000" : $"{baseUrl}/index.html";
+                string appUrl = IsDebugMode ? "http://localhost:2882" : $"{baseUrl}/index.html";
                 Log.Information("Serving React app at {AppUrl}", appUrl);
 
                 // Window title declared here for visibility

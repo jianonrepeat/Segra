@@ -48,6 +48,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Folder Include="Frontend\public\" />
+	  <Folder Include="Frontend\src\assets\" />
 	  <Folder Include="UserInterface\app\Models\" />
 	  <Folder Include="UserInterface\app\Utils\" />
 	</ItemGroup>
