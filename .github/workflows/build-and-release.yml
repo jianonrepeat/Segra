@@ -92,7 +92,7 @@ jobs:
           dotnet publish -c Release --self-contained -r win-x64 -o publish
 
       - name: Package with vpk
-        run: vpk pack -u dev.segergren.recaps -v ${{ env.new_version }} -p ./publish -e ReCaps.exe -o ./output
+        run: vpk pack -u dev.segergren.recaps -v ${{ env.new_version }} -p ./publish -e ReCaps.exe -o ./output --packTitle "ReCaps"
         shell: pwsh
 
       - name: Create a Git Tag
