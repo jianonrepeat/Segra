@@ -125,7 +125,7 @@ jobs:
           dotnet publish -c Release --self-contained -r win-x64 -o publish
 
       - name: Package with vpk
-        run: vpk pack -u dev.segergren.recaps -v ${{ env.new_version }} -p ./publish -e ReCaps.exe -o ./output --packTitle "ReCaps"
+        run: vpk pack -u ReCaps -v ${{ env.new_version }} -p ./publish -e ReCaps.exe -o ./output --packTitle "ReCaps"
         shell: pwsh
 
       - name: Create a Git Tag
@@ -173,6 +173,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dev.segergren.recaps-win-Setup.exe
+          asset_path: ./ReCaps-win-Setup.exe
           asset_name: ReCaps-Setup.exe
           asset_content_type: application/octet-stream
