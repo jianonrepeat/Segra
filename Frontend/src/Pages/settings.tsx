@@ -39,7 +39,7 @@ export default function Settings() {
 
   return (
     <div className="p-2 space-y-6 rounded-lg">
-      <h1 className="text-3xl font-bold">Settings - VERIFY!</h1>
+      <h1 className="text-3xl font-bold">Settings</h1>
 
       {/* Theme Selection */}
       <select
