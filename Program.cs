@@ -1,5 +1,6 @@
 using Photino.NET;
 using Photino.NET.Server;
+using ReCaps.Backend.ContentServer;
 using ReCaps.Backend.Utils;
 using ReCaps.Models;
 using Serilog;
@@ -12,10 +13,6 @@ namespace Photino.ReCaps
 {
     class Program
     {
-
-        public static bool IsDebugMode = false;
-
-
         public static PhotinoWindow window { get; private set; }
 
         [STAThread]
@@ -40,11 +37,41 @@ namespace Photino.ReCaps
                     .CreateStaticFileServer(args, out string baseUrl)
                     .RunAsync();
 
+                bool IsDebugMode = false;
                 string appUrl = IsDebugMode ? "http://localhost:2882" : $"{baseUrl}/index.html";
+
+                if (IsDebugMode)
+                {
+                    var startInfo = new ProcessStartInfo
+                    {
+                        FileName = "cmd.exe",
+                        Arguments = "/c npm run dev",
+                        WorkingDirectory = Path.Join(GetSolutionPath(), @"Frontend")
+                    };
+                    Process process = null;
+
+                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create("http://localhost:2882/index.html");
+                    request.AllowAutoRedirect = false;
+                    request.Method = "HEAD";
+
+                    try
+                    {
+                        request.GetResponse();
+                    }
+                    catch (WebException)
+                    {
+                        process ??= Process.Start(startInfo);
+                    }
+                }
 
                 // Get the directory containing the executable
                 Log.Information("Serving React app at {AppUrl}", appUrl);
 
+                Task.Run(() =>
+                {
+                    string prefix = "http://localhost:2222/";
+                    ContentServer.StartServer(prefix);
+                });
                 // Window title declared here for visibility
                 string windowTitle = "ReCaps";
 

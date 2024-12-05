@@ -1,3 +1,4 @@
+import { useSettings } from '../Context/SettingsContext';
 import {Content} from '../Models/types';
 import {sendMessageToBackend} from '../Utils/MessageUtils'
 
@@ -11,6 +12,8 @@ interface VideoCardProps {
 }
 
 export default function ContentCard({content, type, onClick, isLoading}: VideoCardProps) {
+	const {contentFolder} = useSettings();
+
 	if (isLoading) {
 		// Render a skeleton card
 		return (
@@ -31,9 +34,10 @@ export default function ContentCard({content, type, onClick, isLoading}: VideoCa
 		);
 	}
 
-	const getThumbnailPath = (contentPath: string): string => {
-		const contentFileName = contentPath.substring(contentPath.lastIndexOf('\\') + 1, contentPath.lastIndexOf('.')); // Handle Windows paths
-		return `/api/thumbnail?input=${encodeURIComponent(contentFileName)}&type=${type}`; // API route for thumbnails
+	const getThumbnailPath = (): string => {
+		const contentFileName = `${contentFolder}/.thumbnails/${type}s/${content?.fileName}.png`;
+		console.log(contentFileName);
+		return `http://localhost:2222/api/thumbnail?input=${encodeURIComponent(contentFileName)}`; // API route for thumbnails
 	};
 
 	const formatDuration = (duration: string): string => {
@@ -48,7 +52,7 @@ export default function ContentCard({content, type, onClick, isLoading}: VideoCa
 		}
 	};
 
-	const thumbnailPath = getThumbnailPath(content!.filePath);
+	const thumbnailPath = getThumbnailPath();
 	const formattedDuration = formatDuration(content!.duration);
 
 	const handleDelete = () => {

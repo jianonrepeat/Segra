@@ -14,7 +14,7 @@ interface Selection {
 }
 
 export default function VideoComponent({video}: VideoProps) {
-	const {state} = useSettings();
+	const {state, contentFolder} = useSettings();
 
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -358,6 +358,13 @@ export default function VideoComponent({video}: VideoProps) {
 	};
 
 	const sortedSelections = [...selections].sort((a, b) => a.startTime - b.startTime);
+	
+
+	const getVideoPath = (): string => {
+		const contentFileName = `${contentFolder}/videos/${video?.fileName}.mp4`;
+		console.log(contentFileName);
+		return `http://localhost:2222/api/thumbnail?input=${encodeURIComponent(contentFileName)}`; // API route for thumbnails
+	};
 
 	return (
 		<div ref={containerRef}>
@@ -366,7 +373,7 @@ export default function VideoComponent({video}: VideoProps) {
 					autoPlay
 					className="w-full h-full"
 					style={{maxHeight: '71.3vh'}}
-					src={`/api/content?fileName=${encodeURIComponent(video.fileName)}&type=${video.type.toLocaleLowerCase()}`}
+					src={getVideoPath()}
 					ref={videoRef}
 					// Removed onPlay and onPause handlers here since they are now in useEffect
 					onClick={togglePlayPause}

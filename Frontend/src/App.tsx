@@ -16,7 +16,7 @@ function App() {
 	}, []);
 
   function WebSocketHandler() {
-    useWebSocket('ws://localhost:5000/'); // Now inside WebSocketProvider context
+		useWebSocket('ws://localhost:5000/'); // Now inside WebSocketProvider context
     return null; // This component doesn't render UI
   }
 
