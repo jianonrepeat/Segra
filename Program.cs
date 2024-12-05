@@ -3,18 +3,23 @@ using Photino.NET.Server;
 using ReCaps.Backend.Utils;
 using ReCaps.Models;
 using Serilog;
+using System.Diagnostics;
 using System.Drawing;
+using System.Net;
 using Velopack;
 
 namespace Photino.ReCaps
 {
     class Program
     {
+
+        public static bool IsDebugMode =
 #if DEBUG
-        public static bool IsDebugMode = true;      //serve files from dev server
+    true;
 #else
-        public static bool IsDebugMode = false;     //serve files from asp.net runtime
+    false;
 #endif
+
 
         public static PhotinoWindow window { get; private set; }
 
@@ -34,6 +39,29 @@ namespace Photino.ReCaps
             try
             {
                 Log.Information("Application starting up...");
+
+#if DEBUG && WINDOWS && !NO_SERVER
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = "/c npm run dev",
+                    WorkingDirectory = Path.Join(GetSolutionPath(), @"Frontend")
+                };
+                Process process = null;
+
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create("http://localhost:2882/index.html");
+                request.AllowAutoRedirect = false;
+                request.Method = "HEAD";
+
+                try
+                {
+                    request.GetResponse();
+                }
+                catch (WebException)
+                {
+                    process ??= Process.Start(startInfo);
+                }
+#endif
 
                 // Set up the PhotinoServer
                 PhotinoServer
@@ -95,6 +123,24 @@ namespace Photino.ReCaps
                 Log.Information("Application shutting down.");
                 Log.CloseAndFlush(); // Ensure all logs are written before the application exits
             }
+        }
+
+        private static string GetSolutionPath()
+        {
+            string currentDirectory = Directory.GetCurrentDirectory();
+
+            string directory = currentDirectory;
+            while (!string.IsNullOrEmpty(directory) && !Directory.GetFiles(directory, "*.sln").Any())
+            {
+                directory = Directory.GetParent(directory)?.FullName;
+            }
+
+            if (string.IsNullOrEmpty(directory))
+            {
+                throw new InvalidOperationException("Solution path could not be found. Ensure you are running this application within a solution directory.");
+            }
+
+            return directory;
         }
     }
 }

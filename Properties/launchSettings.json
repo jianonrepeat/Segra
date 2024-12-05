@@ -1,7 +1,9 @@
 {
   "profiles": {
     "ReCaps": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "--debug",
+      "nativeDebugging": true
     }
   }
 }
