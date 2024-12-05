@@ -98,6 +98,24 @@ jobs:
         run: npm run build
         shell: pwsh
 
+      - name: Move Frontend Build to Resources/wwwroot
+        run: |
+          # Define source and destination directories
+          $source = "./Frontend/dist"         # Frontend build output directory
+          $destination = "./Resources/wwwroot"
+
+          # Create the destination directory if it doesn't exist
+          if (-Not (Test-Path -Path $destination)) {
+            New-Item -ItemType Directory -Path $destination -Force
+          }
+
+          # Remove existing contents in Resources/wwwroot to prevent leftover files
+          Remove-Item -Path "$destination\*" -Recurse -Force
+
+          # Copy the build files to Resources/wwwroot, overwriting existing files
+          Copy-Item -Path "$source\*" -Destination $destination -Recurse -Force
+        shell: pwsh
+
       - name: Build the App
         run: |
           dotnet build --configuration Release

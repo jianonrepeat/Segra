@@ -13,12 +13,7 @@ namespace Photino.ReCaps
     class Program
     {
 
-        public static bool IsDebugMode =
-#if DEBUG
-    true;
-#else
-    false;
-#endif
+        public static bool IsDebugMode = false;
 
 
         public static PhotinoWindow window { get; private set; }
@@ -40,35 +35,14 @@ namespace Photino.ReCaps
             {
                 Log.Information("Application starting up...");
 
-#if DEBUG && WINDOWS && !NO_SERVER
-                var startInfo = new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = "/c npm run dev",
-                    WorkingDirectory = Path.Join(GetSolutionPath(), @"Frontend")
-                };
-                Process process = null;
-
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create("http://localhost:2882/index.html");
-                request.AllowAutoRedirect = false;
-                request.Method = "HEAD";
-
-                try
-                {
-                    request.GetResponse();
-                }
-                catch (WebException)
-                {
-                    process ??= Process.Start(startInfo);
-                }
-#endif
-
                 // Set up the PhotinoServer
                 PhotinoServer
                     .CreateStaticFileServer(args, out string baseUrl)
                     .RunAsync();
 
                 string appUrl = IsDebugMode ? "http://localhost:2882" : $"{baseUrl}/index.html";
+
+                // Get the directory containing the executable
                 Log.Information("Serving React app at {AppUrl}", appUrl);
 
                 // Window title declared here for visibility
@@ -84,10 +58,9 @@ namespace Photino.ReCaps
 
                 // Initialize the PhotinoWindow
                 window = new PhotinoWindow()
-                    .SetIconFile("C:/Users/admin/Downloads/icon.ico")
+                    //.SetIconFile("C:/Users/admin/Downloads/icon.ico")
                     .SetTitle(windowTitle)
                     .SetUseOsDefaultSize(false)
-                    .SetSize(new Size(2048, 1024))
                     .SetSize(new Size(1280, 720))
                     .Center()
                     .SetResizable(true)
