@@ -29,6 +29,11 @@ namespace Photino.ReCaps
 
             VelopackApp.Build().Run();
 
+            Task.Run(() =>
+            {
+                UpdateUtils.UpdateAppIfNecessary();
+            });
+
             try
             {
                 Log.Information("Application starting up...");

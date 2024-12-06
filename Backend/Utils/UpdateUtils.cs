@@ -1,0 +1,45 @@
+﻿using Serilog;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Velopack;
+using Velopack.Sources;
+
+namespace ReCaps.Backend.Utils
+{
+    public static class UpdateUtils
+    {
+        public static async Task UpdateAppIfNecessary()
+        {
+            try
+            {
+                Log.Information("Checking if update is necessary");
+
+                // Read access to ReCaps. Remove when Public
+                string token = "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";
+
+                var source = new GithubSource("https://github.com/Segergren/ReCaps", token, false);
+                var mgr = new UpdateManager(source);
+
+                var newVersion = await mgr.CheckForUpdatesAsync();
+
+                if (newVersion == null)
+                {
+                    Log.Information("No update available");
+                    return; // no update available
+                }
+
+                Log.Information("Installing update " + newVersion);
+                await mgr.DownloadUpdatesAsync(newVersion);
+
+                mgr.ApplyUpdatesAndRestart(newVersion);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex.Message);
+            }
+        }
+    }
+}

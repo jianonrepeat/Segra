@@ -167,7 +167,7 @@ jobs:
       - name: List Files in Current Directory
         run: ls -la
       
-      - name: Upload Release Assets
+      - name: Upload Setup File
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -176,3 +176,23 @@ jobs:
           asset_path: ./ReCaps-win-Setup.exe
           asset_name: ReCaps-Setup.exe
           asset_content_type: application/octet-stream
+
+      - name: Upload RELEASES File
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./RELEASES
+          asset_name: RELEASES
+          asset_content_type: text/plain
+
+      - name: Upload releases.win.json
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./releases.win.json
+          asset_name: releases.win.json
+          asset_content_type: application/json
