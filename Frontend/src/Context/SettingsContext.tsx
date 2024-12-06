@@ -1,4 +1,4 @@
-import {createContext, useContext, useState, ReactNode, useRef, useEffect} from 'react';
+import {createContext, useContext, useState, ReactNode} from 'react';
 import {Settings, initialSettings} from '../Models/types';
 import {sendMessageToBackend} from '../Utils/MessageUtils';
 import useWebSocket from 'react-use-websocket';
