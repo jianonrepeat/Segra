@@ -174,7 +174,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./ReCaps-win-Setup.exe
-          asset_name: ReCaps-Setup.exe
+          asset_name: ReCaps-win-Setup.exe
           asset_content_type: application/octet-stream
 
       - name: Upload RELEASES File
@@ -195,4 +195,24 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./releases.win.json
           asset_name: releases.win.json
+          asset_content_type: application/json
+
+      - name: Upload assets.win.json
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./assets.win.json
+          asset_name: assets.win.json
+          asset_content_type: application/json
+
+      - name: Upload ReCaps-0.0.19-full.nupkg
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./ReCaps-0.0.19-full.nupkg
+          asset_name: ReCaps-0.0.19-full.nupkg
           asset_content_type: application/json
