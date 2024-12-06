@@ -9,7 +9,6 @@ export default function Videos() {
   const {setSelectedVideo} = useSelectedVideo();
 
   const handlePlay = (video: Content) => {
-    console.log('Playing video:', video);
     setSelectedVideo(video);
   };
 

@@ -36,7 +36,6 @@ export default function ContentCard({content, type, onClick, isLoading}: VideoCa
 
 	const getThumbnailPath = (): string => {
 		const contentFileName = `${contentFolder}/.thumbnails/${type}s/${content?.fileName}.png`;
-		console.log(contentFileName);
 		return `http://localhost:2222/api/thumbnail?input=${encodeURIComponent(contentFileName)}`; // API route for thumbnails
 	};
 

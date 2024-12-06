@@ -362,7 +362,6 @@ export default function VideoComponent({video}: VideoProps) {
 
 	const getVideoPath = (): string => {
 		const contentFileName = `${contentFolder}/${video?.type.toLocaleLowerCase()}s/${video?.fileName}.mp4`;
-		console.log(contentFileName);
 		return `http://localhost:2222/api/content?input=${encodeURIComponent(contentFileName)}&type=${video?.type.toLocaleLowerCase()}`; // API route for thumbnails
 	};
 
