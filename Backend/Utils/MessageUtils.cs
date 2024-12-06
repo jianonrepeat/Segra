@@ -284,33 +284,43 @@ namespace ReCaps.Backend.Utils
             }
         }
 
+        private static readonly SemaphoreSlim sendLock = new SemaphoreSlim(1, 1);
+
         public static async Task SendSettingsToFrontend()
         {
-            if (Program.hasLoadedInitialSettings == false)
-                return;
-            
-            Log.Information("Sending state to frontend");
-
-            int maxWaitTimeMs = 10000; // Maximum 10 seconds
-            int waitIntervalMs = 100; // Check every 100 milliseconds
-            int elapsedTime = 0;
-
-            while ((activeWebSocket == null || activeWebSocket.State != WebSocketState.Open) && elapsedTime < maxWaitTimeMs)
+            await sendLock.WaitAsync();
+            try
             {
-                await Task.Delay(waitIntervalMs);
-                elapsedTime += waitIntervalMs;
+                if (Program.hasLoadedInitialSettings == false)
+                    return;
+
+                Log.Information("Sending state to frontend");
+
+                int maxWaitTimeMs = 10000; // Maximum 10 seconds
+                int waitIntervalMs = 100; // Check every 100 milliseconds
+                int elapsedTime = 0;
+
+                while ((activeWebSocket == null || activeWebSocket.State != WebSocketState.Open) && elapsedTime < maxWaitTimeMs)
+                {
+                    await Task.Delay(waitIntervalMs);
+                    elapsedTime += waitIntervalMs;
+                }
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                };
+
+                if (activeWebSocket != null && activeWebSocket.State == WebSocketState.Open)
+                {
+                    string message = JsonSerializer.Serialize(Settings.Instance, options); // Convert the state to JSON
+                    byte[] messageBuffer = Encoding.UTF8.GetBytes(message);
+                    await activeWebSocket.SendAsync(new ArraySegment<byte>(messageBuffer), WebSocketMessageType.Text, true, CancellationToken.None);
+                }
             }
-
-            var options = new JsonSerializerOptions
+            finally
             {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            };
-
-            if (activeWebSocket != null && activeWebSocket.State == WebSocketState.Open)
-            {
-                string message = JsonSerializer.Serialize(Settings.Instance, options); // Convert the state to JSON
-                byte[] messageBuffer = Encoding.UTF8.GetBytes(message);
-                await activeWebSocket.SendAsync(new ArraySegment<byte>(messageBuffer), WebSocketMessageType.Text, true, CancellationToken.None);
+                sendLock.Release();
             }
         }
     }

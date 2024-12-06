@@ -47,6 +47,7 @@ export function SettingsProvider({children}: SettingsProviderProps) {
 		{
 			onOpen: () => {
 				console.log('Connected to WebSocket server');
+				sendMessageToBackend("GetSettings");
 			},
 			onMessage: (event: any) => {
 				try {
