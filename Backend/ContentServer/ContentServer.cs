@@ -123,12 +123,12 @@ namespace ReCaps.Backend.ContentServer
             try
             {
                 var query = HttpUtility.ParseQueryString(context.Request.Url.Query);
-                string fileName = query["fileName"];
+                string fileName = query["input"];
                 string type = query["type"];
 
                 var response = context.Response;
 
-                if (File.Exists(fileName) && type == "video")
+                if (File.Exists(fileName))
                 {
                     FileInfo fileInfo = new FileInfo(fileName);
                     long fileLength = fileInfo.Length;
@@ -185,6 +185,10 @@ namespace ReCaps.Backend.ContentServer
                     }
                 }
                 response.Close();
+            }
+            catch (HttpListenerException ex)
+            {
+                // Normal, do nothing.
             }
             catch (Exception ex)
             {
