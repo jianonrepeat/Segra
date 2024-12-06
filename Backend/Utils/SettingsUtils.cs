@@ -13,7 +13,7 @@ namespace ReCaps.Backend.Utils
     internal static class SettingsUtils
     {
         private static readonly string SettingsFilePath =
-           Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ReCaps", "settings.json");
+           Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ReCaps", "settings.json");
 
         public static void SaveSettings()
         {
@@ -256,7 +256,6 @@ namespace ReCaps.Backend.Utils
 
                     if (!Directory.Exists(metadataPath))
                     {
-                        Log.Information($"Directory does not exist: {metadataPath}");
                         continue;
                     }
 
