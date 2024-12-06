@@ -15,10 +15,18 @@ namespace Photino.ReCaps
     {
         public static bool hasLoadedInitialSettings = false;
         public static PhotinoWindow window { get; private set; }
+        private static readonly string SettingsFilePath =
+          Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ReCaps", "logs.txt");
 
         [STAThread]
         static void Main(string[] args)
         {
+            var directory = Path.GetDirectoryName(SettingsFilePath);
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
             // Configure Serilog
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
