@@ -1,24 +1,18 @@
 import {useEffect, useState} from 'react';
 import Settings from "./Pages/settings";
 import Menu from "./menu";
-import {useWebSocket} from './Context/useWebSocket';
 import Videos from './Pages/videos';
 import Clips from './Pages/clips';
 import {SettingsProvider} from './Context/SettingsContext';
 import Video from './Pages/video';
 import {ModalProvider} from './Context/ModalContext';
 import {useSelectedVideo} from './Context/SelectedVideoContext';
-import { themeChange } from 'theme-change';
+import {themeChange} from 'theme-change';
 
 function App() {
 	useEffect(() => {
 		themeChange(false);
 	}, []);
-
-  function WebSocketHandler() {
-		useWebSocket('ws://localhost:5000/'); // Now inside WebSocketProvider context
-    return null; // This component doesn't render UI
-  }
 
 	const {selectedVideo, setSelectedVideo} = useSelectedVideo();
 	const [selectedMenu, setSelectedMenu] = useState('Videos');
@@ -46,7 +40,6 @@ function App() {
 	return (
 		<SettingsProvider>
 			<ModalProvider>
-				<WebSocketHandler />
 				<div className="flex h-screen">
 					<div className="h-full">
 						<Menu selectedMenu={selectedMenu} onSelectMenu={handleMenuSelection} />

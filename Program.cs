@@ -13,6 +13,7 @@ namespace Photino.ReCaps
 {
     class Program
     {
+        public static bool hasLoadedInitialSettings = false;
         public static PhotinoWindow window { get; private set; }
 
         [STAThread]
@@ -76,12 +77,12 @@ namespace Photino.ReCaps
                 string windowTitle = "ReCaps";
 
                 SettingsUtils.LoadSettings();
+                hasLoadedInitialSettings = true;
                 Settings.Instance.State.Initialize();
                 SettingsUtils.SaveSettings();
 
                 // Start WebSocket and Load Settings
                 Task.Run(MessageUtils.StartWebsocket);
-                SettingsUtils.LoadContentFromFolderIntoState();
 
                 // Initialize the PhotinoWindow
                 window = new PhotinoWindow()
@@ -111,7 +112,6 @@ namespace Photino.ReCaps
                         Log.Error(ex, "Failed to initialize OBSUtils.");
                     }
                 });
-
                 window.WaitForClose(); // Starts the application event loop
             }
             catch (Exception ex)

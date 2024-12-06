@@ -192,8 +192,8 @@ namespace ReCaps.Backend.Utils
                 Game = "Counter-Strike 2"
             };
 
-            MessageUtils.SendSettingsToFrontend();
-            
+             MessageUtils.SendSettingsToFrontend();
+
             Log.Information("Recording started: " + filePath);
             PlayStartSound();
             return true;

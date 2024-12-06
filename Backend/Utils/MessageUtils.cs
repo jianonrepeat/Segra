@@ -61,8 +61,8 @@ namespace ReCaps.Backend.Utils
                             });
                             break;
                         case "GetSettings":
-                            SendSettingsToFrontend();
                             Log.Information("GetSettings command received.");
+                            await SendSettingsToFrontend();
                             break;
                         case "SetVideoLocation":
                             await SetVideoLocationAsync();
@@ -284,9 +284,22 @@ namespace ReCaps.Backend.Utils
             }
         }
 
-        public static async void SendSettingsToFrontend()
+        public static async Task SendSettingsToFrontend()
         {
+            if (Program.hasLoadedInitialSettings == false)
+                return;
+            
             Log.Information("Sending state to frontend");
+
+            int maxWaitTimeMs = 10000; // Maximum 10 seconds
+            int waitIntervalMs = 100; // Check every 100 milliseconds
+            int elapsedTime = 0;
+
+            while ((activeWebSocket == null || activeWebSocket.State != WebSocketState.Open) && elapsedTime < maxWaitTimeMs)
+            {
+                await Task.Delay(waitIntervalMs);
+                elapsedTime += waitIntervalMs;
+            }
 
             var options = new JsonSerializerOptions
             {

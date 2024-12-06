@@ -1,4 +1,5 @@
-﻿using ReCaps.Models;
+﻿using Photino.ReCaps;
+using ReCaps.Models;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,11 @@ namespace ReCaps.Backend.Utils
 
         public static void SaveSettings()
         {
+            if (Program.hasLoadedInitialSettings == false)
+            {
+                Log.Error("Program has not loaded initial settings. Can't save!");
+            }
+
             try
             {
                 // Ensure the directory exists
