@@ -70,7 +70,6 @@ namespace ReCaps.Backend.ContentServer
         {
             var query = HttpUtility.ParseQueryString(context.Request.Url.Query);
             string input = query["input"];
-            Log.Information($"Thumbnail requested: {input}");
 
             var response = context.Response;
 

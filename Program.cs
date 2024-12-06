@@ -9,7 +9,7 @@ using System.Drawing;
 using System.Net;
 using Velopack;
 
-namespace Photino.ReCaps
+namespace ReCaps
 {
     class Program
     {
@@ -105,7 +105,7 @@ namespace Photino.ReCaps
                     .SetSize(new Size(1280, 720))
                     .Center()
                     .SetResizable(true)
-                    .RegisterWebMessageReceivedHandler((object sender, string message) =>
+                    .RegisterWebMessageReceivedHandler((sender, message) =>
                     {
                         window = (PhotinoWindow)sender;
                         MessageUtils.HandleMessage(message);

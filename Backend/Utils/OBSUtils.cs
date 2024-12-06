@@ -1,6 +1,6 @@
 ﻿using LibObs;
 using NAudio.Wave;
-using Photino.ReCaps;
+using ReCaps;
 using ReCaps.Models;
 using Serilog;
 using System;

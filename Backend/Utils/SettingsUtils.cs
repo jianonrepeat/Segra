@@ -1,5 +1,4 @@
-﻿using Photino.ReCaps;
-using ReCaps.Models;
+﻿using ReCaps.Models;
 using Serilog;
 using System;
 using System.Collections.Generic;
