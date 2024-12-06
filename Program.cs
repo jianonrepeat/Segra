@@ -15,13 +15,13 @@ namespace Photino.ReCaps
     {
         public static bool hasLoadedInitialSettings = false;
         public static PhotinoWindow window { get; private set; }
-        private static readonly string SettingsFilePath =
-          Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ReCaps", "logs.txt");
+        private static readonly string LogFilePath =
+          Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ReCaps", "logs.log");
 
         [STAThread]
         static void Main(string[] args)
         {
-            var directory = Path.GetDirectoryName(SettingsFilePath);
+            var directory = Path.GetDirectoryName(LogFilePath);
             if (!Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
@@ -32,7 +32,7 @@ namespace Photino.ReCaps
                 .MinimumLevel.Debug()
                 .WriteTo.Console()
                 .WriteTo.Debug()
-                .WriteTo.File("logs/application.log", rollingInterval: RollingInterval.Day)
+                .WriteTo.File(LogFilePath, rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
             VelopackApp.Build().Run();
