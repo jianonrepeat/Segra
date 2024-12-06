@@ -79,6 +79,13 @@ namespace ReCaps.Backend.ContentServer
                 {
                     byte[] buffer = File.ReadAllBytes(input);
                     response.ContentType = "image/jpeg"; // Change to appropriate MIME type if needed
+                    response.AddHeader("Cache-Control", "public, max-age=86400");
+                    response.AddHeader("Expires", DateTime.UtcNow.AddDays(1).ToString("R"));
+
+                    var lastModified = File.GetLastWriteTimeUtc(input);
+                    response.AddHeader("Last-Modified", lastModified.ToString("R"));
+
+                    response.ContentLength64 = buffer.Length;
                     response.OutputStream.Write(buffer, 0, buffer.Length);
                 }
                 else
