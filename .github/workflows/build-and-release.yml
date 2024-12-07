@@ -156,7 +156,7 @@ jobs:
         run: |
           # Assign commit messages to a variable
           $commitMessages = "${{ needs.build.outputs.commit_messages }}"
-    
+
           # Define the JSON payload as a single string with embedded commit messages
           $jsonPayload = @"
           {
@@ -183,10 +183,10 @@ jobs:
             ]
           }
           "@
-    
+
           # Convert the JSON payload string to a single-line string
           $body = $jsonPayload.Replace("`n", "").Replace("`r", "").Replace("`t", "").Trim()
-    
+
           try {
               # Make the API call
               $response = Invoke-RestMethod -Uri "https://api.openai.com/v1/chat/completions" `
@@ -196,7 +196,7 @@ jobs:
                       "Authorization" = "Bearer $env:OPENAI_API_KEY"
                   } `
                   -Body $body
-    
+
               # Check if the response contains choices
               if ($response.choices.Count -gt 0) {
                   $releaseNotes = $response.choices[0].message.content.Trim()
@@ -215,6 +215,13 @@ jobs:
               echo "EOF" >> $GITHUB_OUTPUT
               exit 1  # Exit with an error code to fail the step
           }
+        shell: pwsh
+
+      # **Debugging Step: Echo the Generated Release Notes**
+      - name: Debug Release Notes
+        run: |
+          echo "Release Notes:"
+          echo "${{ steps.generate_release_notes.outputs.notes }}"
         shell: pwsh
 
       - name: Create GitHub Release
