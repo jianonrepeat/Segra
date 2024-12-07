@@ -377,7 +377,6 @@ namespace ReCaps.Models
 
         public void UpdateAudioDevices()
         {
-            Log.Information("Loading");
             // Get the list of input devices
             var inputDevices = AudioDeviceUtils.GetInputDevices();
             if (!Enumerable.SequenceEqual(_inputDevices, inputDevices))
@@ -391,6 +390,20 @@ namespace ReCaps.Models
             {
                 _outputDevices = outputDevices;
             }
+
+            Log.Information("Audio devices");
+            Log.Information("-------------");
+            foreach (var device in InputDevices)
+            {
+                Log.Information($"Input device: {device.Name} {device.Id}");
+            }
+
+            foreach (var device in OutputDevices)
+            {
+                Log.Information($"Output device: {device.Name} {device.Id}");
+            }
+            Log.Information("-------------");
+            MessageUtils.SendSettingsToFrontend();
         }
 
         public void UpdateRecordingEndTime(DateTime endTime)
