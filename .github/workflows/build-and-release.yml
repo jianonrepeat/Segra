@@ -80,17 +80,33 @@ jobs:
       - name: Get Commit Messages
         id: get_commits
         run: |
+          # Get all tags
+          $tags = git tag
+          Write-Host "All tags: $tags"
+
+          # Get the latest tag
           $latestTag = git describe --tags --abbrev=0 2>$null
-          $commits = if ($latestTag) { 
-            git log ${latestTag}..HEAD --pretty=format:"- **%an**: %s" 
-          } else { 
-            git log --pretty=format:"- **%an**: %s" 
+          Write-Host "Latest tag: $latestTag"
+
+          # Check all commits since the last tag
+          $commitLog = git log ${latestTag}..HEAD --pretty=format:"- **%an**: %s"
+          Write-Host "Commit log between tag and HEAD:"
+          Write-Host "$commitLog"
+
+          # If no commits found between tag, get all commits
+          if (-not $commitLog) {
+              $commitLog = git log --pretty=format:"- **%an**: %s"
+              Write-Host "All commits (no tag filter):"
+              Write-Host "$commitLog"
           }
-    
+
+          # Ensure we have a non-null string
+          $commits = $commitLog ?? ""
+
           # Base64 encode to preserve special characters
           $encodedCommits = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($commits))
           echo "commit_messages=$encodedCommits" >> $env:GITHUB_OUTPUT
-    
+
           # Also log for debugging
           Write-Host "Commits found: $($commits.Count)"
           Write-Host "Sample commits: $commits"
