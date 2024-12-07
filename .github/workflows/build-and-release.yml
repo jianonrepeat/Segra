@@ -81,9 +81,19 @@ jobs:
         id: get_commits
         run: |
           $latestTag = git describe --tags --abbrev=0 2>$null
-          $commits = if ($latestTag) { git log ${latestTag}..HEAD --pretty=format:"- **%an**: %s" } else { git log --pretty=format:"- **%an**: %s" }
-          $commits = $commits -replace "`r`n", "%0A"
-          echo "commit_messages=$commits" >> $env:GITHUB_OUTPUT
+          $commits = if ($latestTag) { 
+            git log ${latestTag}..HEAD --pretty=format:"- **%an**: %s" 
+          } else { 
+            git log --pretty=format:"- **%an**: %s" 
+          }
+    
+          # Base64 encode to preserve special characters
+          $encodedCommits = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($commits))
+          echo "commit_messages=$encodedCommits" >> $env:GITHUB_OUTPUT
+    
+          # Also log for debugging
+          Write-Host "Commits found: $($commits.Count)"
+          Write-Host "Sample commits: $commits"
         shell: pwsh
 
       - name: Configure Git User
@@ -166,7 +176,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           # Assign commit messages to a variable
-          $commitMessages = "${{ needs.build.outputs.commit_messages }}"
+          $commitMessages = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String("${{ needs.build.outputs.commit_messages }}"))
 
           # Define the JSON payload as a single string with embedded commit messages
           $jsonPayload = @"
