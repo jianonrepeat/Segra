@@ -14,6 +14,7 @@ jobs:
 
     outputs:
       new_version: ${{ steps.get_version.outputs.new_version }}
+      commit_messages: ${{ steps.get_commits.outputs.commit_messages }}
 
     steps:
       - name: Checkout Code
@@ -26,6 +27,7 @@ jobs:
         run: |
           git submodule sync --recursive
           git submodule update --init --recursive
+        shell: pwsh
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v3
@@ -64,13 +66,19 @@ jobs:
 
           # Increment the patch version
           $patch++
-
-          # Combine into new version without 'v' prefix to comply with vpk
           $newVersion = "$major.$minor.$patch"
-
-          # Output the new version
           echo "new_version=$newVersion" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
           echo "new_version=$newVersion" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: Get Commit Messages
+        id: get_commits
+        run: |
+          $latestTag = git describe --tags --abbrev=0 2>$null
+          $commits = if ($latestTag) { git log ${latestTag}..HEAD --pretty=format:"- **%an**: %s" } else { git log --pretty=format:"- **%an**: %s" }
+          echo "commit_messages<<EOF" >> $env:GITHUB_OUTPUT
+          echo "$commits" >> $env:GITHUB_OUTPUT
+          echo "EOF" >> $env:GITHUB_OUTPUT
         shell: pwsh
 
       - name: Configure Git User
@@ -81,10 +89,7 @@ jobs:
 
       - name: Install vpk as .NET Global Tool
         run: |
-          # Install vpk globally
           dotnet tool install -g vpk
-
-          # Add the .NET global tools path to the environment PATH
           $env:PATH += ";$env:USERPROFILE\.dotnet\tools"
         shell: pwsh
 
@@ -100,29 +105,20 @@ jobs:
 
       - name: Move Frontend Build to Resources/wwwroot
         run: |
-          # Define source and destination directories
-          $source = "./Frontend/dist"         # Frontend build output directory
+          $source = "./Frontend/dist"
           $destination = "./Resources/wwwroot"
-
-          # Create the destination directory if it doesn't exist
-          if (-Not (Test-Path -Path $destination)) {
-            New-Item -ItemType Directory -Path $destination -Force
-          }
-
-          # Remove existing contents in Resources/wwwroot to prevent leftover files
+          if (-Not (Test-Path -Path $destination)) { New-Item -ItemType Directory -Path $destination -Force }
           Remove-Item -Path "$destination\*" -Recurse -Force
-
-          # Copy the build files to Resources/wwwroot, overwriting existing files
           Copy-Item -Path "$source\*" -Destination $destination -Recurse -Force
         shell: pwsh
 
       - name: Build the App
-        run: |
-          dotnet build --configuration Release
+        run: dotnet build --configuration Release
+        shell: pwsh
 
       - name: Publish the App
-        run: |
-          dotnet publish -c Release --self-contained -r win-x64 -o publish
+        run: dotnet publish -c Release --self-contained -r win-x64 -o publish
+        shell: pwsh
 
       - name: Package with vpk
         run: vpk pack -u ReCaps -v ${{ env.new_version }} -p ./publish -e ReCaps.exe -o ./output --packTitle "ReCaps"
@@ -153,6 +149,74 @@ jobs:
         with:
           name: ReCaps
 
+      - name: Generate Release Notes with OpenAI
+        id: generate_release_notes
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          # Assign commit messages to a variable
+          $commitMessages = "${{ needs.build.outputs.commit_messages }}"
+    
+          # Define the JSON payload as a single string with embedded commit messages
+          $jsonPayload = @"
+          {
+            "model": "o1-preview",
+            "messages": [
+              {
+                "role": "assistant",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "You are a helpful assistant specializing in formatting release notes for open-source applications, specifically games and clip recorders. Your task is to take raw update information and organize it into well-structured, clear, and professional release notes. Ensure that the release notes include only the following sections:\n\n- **New Features:** Describe any new functionalities or features added to the application.\n- **Improvements:** Highlight enhancements made to existing features or overall performance.\n- **Bug Fixes:** List any issues that have been resolved.\n\nUse Markdown formatting for readability and consistency. Maintain a user-friendly and engaging tone suitable for the applications community. Ensure that the release notes are concise and easy to understand for normal users, avoiding unnecessary technical jargon. Do not include any sections that are not part of the release, such as Installation Instructions, Version headers, Known Issues, or Thank You messages. Prioritize clarity and organization to help users quickly grasp the updates and changes in the new release."
+                  }
+                ]
+              },
+              {
+                "role": "user",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "$commitMessages"
+                  }
+                ]
+              }
+            ]
+          }
+          "@
+    
+          # Convert the JSON payload string to a single-line string
+          $body = $jsonPayload.Replace("`n", "").Replace("`r", "").Replace("`t", "").Trim()
+    
+          try {
+              # Make the API call
+              $response = Invoke-RestMethod -Uri "https://api.openai.com/v1/chat/completions" `
+                  -Method POST `
+                  -Headers @{
+                      "Content-Type"  = "application/json"
+                      "Authorization" = "Bearer $env:OPENAI_API_KEY"
+                  } `
+                  -Body $body
+    
+              # Check if the response contains choices
+              if ($response.choices.Count -gt 0) {
+                  $releaseNotes = $response.choices[0].message.content.Trim()
+                  # Set the release notes as an output variable
+                  echo "notes<<EOF" >> $GITHUB_OUTPUT
+                  echo "$releaseNotes" >> $GITHUB_OUTPUT
+                  echo "EOF" >> $GITHUB_OUTPUT
+              } else {
+                  throw "No choices returned in the OpenAI API response."
+              }
+          } catch {
+              Write-Error "Failed to generate release notes: $_"
+              # Optionally, set a default message or fail the workflow
+              echo "notes<<EOF" >> $GITHUB_OUTPUT
+              echo "Failed to generate release notes." >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+              exit 1  # Exit with an error code to fail the step
+          }
+        shell: pwsh
+
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
@@ -161,12 +225,13 @@ jobs:
         with:
           tag_name: v${{ needs.build.outputs.new_version }}
           release_name: Release v${{ needs.build.outputs.new_version }}
+          body: ${{ steps.generate_release_notes.outputs.notes }}
           draft: false
           prerelease: false
 
       - name: List Files in Current Directory
         run: ls -la
-      
+
       - name: Upload Setup File
         uses: actions/upload-release-asset@v1
         env:
