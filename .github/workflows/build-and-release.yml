@@ -22,6 +22,7 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
+          fetch-tags: true
 
       - name: Checkout Submodules
         run: |
@@ -71,14 +72,18 @@ jobs:
           echo "new_version=$newVersion" >> $env:GITHUB_OUTPUT
         shell: pwsh
 
+      - name: Fetch Tags
+        run: |
+          git fetch --tags
+        shell: pwsh
+
       - name: Get Commit Messages
         id: get_commits
         run: |
           $latestTag = git describe --tags --abbrev=0 2>$null
           $commits = if ($latestTag) { git log ${latestTag}..HEAD --pretty=format:"- **%an**: %s" } else { git log --pretty=format:"- **%an**: %s" }
-          echo "commit_messages<<EOF" >> $env:GITHUB_OUTPUT
-          echo "$commits" >> $env:GITHUB_OUTPUT
-          echo "EOF" >> $env:GITHUB_OUTPUT
+          $commits = $commits -replace "`r`n", "%0A"
+          echo "commit_messages=$commits" >> $env:GITHUB_OUTPUT
         shell: pwsh
 
       - name: Configure Git User
@@ -154,6 +159,7 @@ jobs:
           echo "Commit Messages:"
           echo "${{ needs.build.outputs.commit_messages }}"
         shell: pwsh
+
       - name: Generate Release Notes with OpenAI
         id: generate_release_notes
         env:
