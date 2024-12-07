@@ -149,6 +149,11 @@ jobs:
         with:
           name: ReCaps
 
+      - name: Debug Commit Messages
+        run: |
+          echo "Commit Messages:"
+          echo "${{ needs.build.outputs.commit_messages }}"
+        shell: pwsh
       - name: Generate Release Notes with OpenAI
         id: generate_release_notes
         env:
