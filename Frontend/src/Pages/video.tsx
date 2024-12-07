@@ -414,7 +414,7 @@ export default function VideoComponent({video}: VideoProps) {
 						height: '40px',
 						width: `${duration * pixelsPerSecond}px`,
 						minWidth: '100%',
-						overflow: 'visible',
+						overflow: 'hidden',
 					}}
 				>
 					{minorTicks.map((tickTime, index) => {

@@ -19,6 +19,7 @@ namespace ReCaps.Backend.Utils
             if (Program.hasLoadedInitialSettings == false)
             {
                 Log.Error("Program has not loaded initial settings. Can't save!");
+                return;
             }
 
             try

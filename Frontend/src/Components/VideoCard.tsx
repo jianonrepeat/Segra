@@ -1,4 +1,4 @@
-import { useSettings } from '../Context/SettingsContext';
+import {useSettings} from '../Context/SettingsContext';
 import {Content} from '../Models/types';
 import {sendMessageToBackend} from '../Utils/MessageUtils'
 
@@ -71,9 +71,8 @@ export default function ContentCard({content, type, onClick, isLoading}: VideoCa
 			<figure className="relative aspect-ratio[16/9]">
 				<img
 					src={thumbnailPath}
-					alt={`${content!.title} thumbnail`}
+					alt={"thumbnail"}
 					className="w-full h-full object-cover"
-					loading="lazy"
 					width={1600}
 					height={900}
 				/>
