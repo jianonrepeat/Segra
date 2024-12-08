@@ -1,0 +1,35 @@
+name: Finalize Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to finalize (e.g. 1.2.3)'
+        required: true
+
+jobs:
+  finalize-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Convert Pre-Release to Final
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          RELEASE_ID=$(curl -s \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/releases/tags/v$VERSION \
+            | jq -r '.id')
+
+          if [ "$RELEASE_ID" = "null" ] || [ -z "$RELEASE_ID" ]; then
+            echo "No release found for version $VERSION"
+            exit 1
+          fi
+
+          curl -s \
+            -X PATCH \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID \
+            -d '{"prerelease": false, "name": "Release v'"$VERSION"'", "body": "Updated release notes as final release"}'
