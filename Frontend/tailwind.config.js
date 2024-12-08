@@ -53,6 +53,20 @@ export default {
           warning: "#EFAF2B", // Gold (reuse for warning)
           error: "#E85A5A", // Poppy (reuse for error)
         },
+        rich: {
+          primary: "#116860", // Deep teal green
+          secondary: "#0b423d", // Dark forest green
+          accent: "#E85A5A", // Vibrant coral red
+          neutral: "#09413c", // Dark greenish teal
+          "base-100": "#132625", // Very dark, muted green
+          "base-200": "#DBDAE1", // Soft lavender-gray
+          "base-300": "#0c1919", // Near-black with green undertones
+          "base-content": "#F2F3F7", // Very light grayish white
+          info: "#578DDD", // Medium sky blue
+          success: "#14B3B2", // Bright aqua turquoise
+          warning: "#EFAF2B", // Rich mustard yellow
+          error: "#E85A5A", // Bold coral red
+        },
       },
     ],
   },

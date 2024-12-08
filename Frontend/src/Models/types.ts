@@ -25,7 +25,7 @@ export interface Recording {
 }
 
 export interface Settings {
-	theme: 'recaps' | 'dark' | 'night' | 'dracula' | 'black' | 'luxury' | 'forest' | 'halloween' | 'coffee' | 'dim' | 'sunset';
+	theme: 'recaps' | 'rich' | 'dark' | 'night' | 'dracula' | 'black' | 'luxury' | 'forest' | 'halloween' | 'coffee' | 'dim' | 'sunset';
 	resolution: '720p' | '1080p' | '1440p' | '4K';
 	frameRate: number;
 	rateControl: string;

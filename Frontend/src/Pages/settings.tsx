@@ -50,6 +50,7 @@ export default function Settings() {
         className="select select-bordered w-full max-w-xs"
       >
         <option value="recaps">ReCaps</option>
+        <option value="rich">Rich</option>
         <option value="dark">Dark</option>
         <option value="night">Night</option>
         <option value="dracula">Dracula</option>
