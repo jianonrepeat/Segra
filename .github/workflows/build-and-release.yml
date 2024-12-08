@@ -151,7 +151,7 @@ jobs:
           } else {
             # Get commits from previousTag to the new tag
             Write-Host "Previous tag used for comparison: $previousTag"
-            $commitLog = git log $previousTag..HEAD --oneline
+            $commitLog = git log $previousTag..v${{ env.new_version }} --oneline
             #
             if ([string]::IsNullOrWhiteSpace($commitLog)) {
               # No commits since last release
