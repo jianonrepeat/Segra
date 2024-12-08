@@ -26,7 +26,7 @@ namespace ReCaps.Backend.Utils
 
         public static void Initialize()
         {
-            /*if (IsInitialized) return;
+            if (IsInitialized) return;
 
             if (obs_initialized())
                 throw new Exception("Error: OBS is already initialized.");
@@ -56,7 +56,7 @@ namespace ReCaps.Backend.Utils
 
             obs_load_all_modules();
             obs_log_loaded_modules();
-            obs_post_load_modules();*/
+            obs_post_load_modules();
 
             IsInitialized = true;
             Settings.Instance.State.HasLoadedObs = true;
@@ -192,7 +192,7 @@ namespace ReCaps.Backend.Utils
                 Game = "Counter-Strike 2"
             };
 
-             MessageUtils.SendSettingsToFrontend();
+            MessageUtils.SendSettingsToFrontend();
 
             Log.Information("Recording started: " + filePath);
             PlayStartSound();
