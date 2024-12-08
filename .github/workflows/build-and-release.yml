@@ -1,11 +1,17 @@
 name: Build and Release
 
 on:
-  push:
-    branches:
-      - main
-    tags-ignore:
-      - '*'
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Type of release increment (patch, minor, major)'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 jobs:
   build:
@@ -54,16 +60,12 @@ jobs:
             exit 1
           fi
 
-          # Install jq if not available
           if ! command -v jq &> /dev/null; then
             echo "jq not found, installing..."
             sudo apt-get update && sudo apt-get install -y jq
           fi
 
-          # Prepare the prompt for OpenAI
           PROMPT="Generate professional release notes based on the following Git log:\n\n$GIT_LOG"
-
-          # Create JSON payload
           JSON_PAYLOAD=$(jq -n --arg model "gpt-4" \
             --arg prompt "$PROMPT" \
             '{
@@ -71,7 +73,7 @@ jobs:
               "messages": [
                 {
                   "role": "system",
-                  "content": "You are a helpful assistant specializing in creating user-friendly release notes for open-source applications, specifically games and clip recorders. Your task is to take raw update information and organize it into well-structured, clear, and professional release notes tailored for the applications users. Ensure that the release notes include only the following sections: New Features: Briefly describe any new functionalities or features added to the application. Improvements: Highlight enhancements made to existing features or overall performance. Bug Fixes: List any issues that have been resolved or minor fixes applied. Use Markdown formatting for readability and consistency. The section titles should not include colons.  Maintain a friendly and approachable tone suitable for the applications user community. Ensure the release notes are concise and easy to understand for regular users, avoiding unnecessary technical jargon. Skip any information irrelevant to users, such as development-specific updates or detailed pipeline changes, and replace such items with a general mention of minor fixes if necessary. Prioritize clarity and simplicity to help users quickly understand the updates and changes in the new release. The release notes should not include any additional messages, such as Thank you for using our application."
+                  "content": "You are a helpful assistant specializing in creating user-friendly release notes for open-source applications, specifically games and clip recorders. Your task is to take raw update information and organize it into well-structured, clear, and professional release notes tailored for the applications users. Ensure that the release notes include only the following sections: New Features, Improvements, Bug Fixes. Use Markdown formatting for readability. Keep it concise. No thank you notes."
                 },
                 {
                   "role": "user",
@@ -80,16 +82,13 @@ jobs:
               ]
             }')
 
-          # Call OpenAI API
           RESPONSE=$(curl -s -X POST "https://api.openai.com/v1/chat/completions" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $OPENAI_API_KEY" \
             -d "$JSON_PAYLOAD")
 
-          # Extract release notes using jq
           RELEASE_NOTES=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
 
-          # Check if release notes are empty
           if [ -z "$RELEASE_NOTES" ] || [ "$RELEASE_NOTES" == "null" ]; then
             echo "Error: Release notes generation failed or returned empty."
             exit 1
@@ -98,7 +97,6 @@ jobs:
           echo "Release notes:"
           echo "$RELEASE_NOTES"
 
-          # Set release_notes as output
           echo "release_notes<<EOF" >> $GITHUB_OUTPUT
           echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -115,6 +113,7 @@ jobs:
 
       - name: Determine Version
         id: get_version
+        shell: pwsh
         run: |
           $tags = git tag
           if ($tags -ne $null -and $tags.Count -gt 0) {
@@ -130,11 +129,18 @@ jobs:
           $major = [int]$versionParts[0]
           $minor = [int]$versionParts[1]
           $patch = [int]$versionParts[2]
-          $patch++
+
+          $releaseType = "${{ github.event.inputs.release_type }}"
+          switch ($releaseType) {
+            "major" { $major++; $minor=0; $patch=0 }
+            "minor" { $minor++; $patch=0 }
+            "patch" { $patch++ }
+            default { $patch++ } 
+          }
+
           $newVersion = "$major.$minor.$patch"
           echo "new_version=$newVersion" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
           echo "new_version=$newVersion" >> $env:GITHUB_OUTPUT
-        shell: pwsh
 
       - name: Configure Git User
         run: |
@@ -202,17 +208,17 @@ jobs:
         with:
           name: ReCaps
 
-      - name: Create GitHub Release
+      - name: Create GitHub Release (Pre-Release)
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ needs.build.outputs.new_version }}
-          release_name: Release v${{ needs.build.outputs.new_version }}
+          release_name: "Release v${{ needs.build.outputs.new_version }} (Pre-Release)"
           body: ${{ needs.build.outputs.release_notes }}
           draft: false
-          prerelease: false
+          prerelease: true
 
       - name: Upload Setup File
         uses: actions/upload-release-asset@v1
@@ -263,3 +269,25 @@ jobs:
           asset_path: ./ReCaps-${{ needs.build.outputs.new_version }}-full.nupkg
           asset_name: ReCaps-${{ needs.build.outputs.new_version }}-full.nupkg
           asset_content_type: application/json
+
+  finalize-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    steps:
+      - name: Convert Pre-Release to Final
+        run: |
+          VERSION="${{ needs.build.outputs.new_version }}"
+          RELEASE_ID=$(curl -s \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/releases/tags/v$VERSION \
+            | jq -r '.id')
+          
+          curl -s \
+            -X PATCH \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID \
+            -d '{"prerelease": false, "name": "Release v'"$VERSION"'", "body": "Updated release notes as final release"}'
