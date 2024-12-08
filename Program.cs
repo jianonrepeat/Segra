@@ -51,7 +51,7 @@ namespace ReCaps
                     .CreateStaticFileServer(args, out string baseUrl)
                     .RunAsync();
 
-                bool IsDebugMode = false;
+                bool IsDebugMode = true;
                 string appUrl = IsDebugMode ? "http://localhost:2882" : $"{baseUrl}/index.html";
 
                 if (IsDebugMode)

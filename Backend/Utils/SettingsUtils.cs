@@ -11,8 +11,13 @@ namespace ReCaps.Backend.Utils
 {
     internal static class SettingsUtils
     {
-        private static readonly string SettingsFilePath =
+        public static readonly string SettingsFilePath =
            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ReCaps", "settings.json");
+        public static readonly string OBSDirectory =
+   Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ReCaps", "obs");
+        public static readonly string ffmpegFilePath =
+   Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ReCaps", "ffmpeg", "ffmpeg.exe");
+
 
         public static void SaveSettings()
         {
