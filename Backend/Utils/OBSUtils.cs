@@ -26,6 +26,11 @@ namespace ReCaps.Backend.Utils
 
         public static void Initialize()
         {
+            // TODO (os) implement
+            IsInitialized = true;
+            Settings.Instance.State.HasLoadedObs = true;
+            return;
+
             if (IsInitialized) return;
 
             if (obs_initialized())
