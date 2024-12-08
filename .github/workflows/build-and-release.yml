@@ -129,7 +129,7 @@ jobs:
         shell: pwsh
 
       - name: Package with vpk
-        run: vpk pack -u ReCaps -v ${{ env.new_version }} -p ./publish -e ReCaps.exe -o ./output --packTitle "ReCaps"
+        run: vpk pack -u ReCaps -v ${{ env.new_version }} -p ./publish -e ReCaps.exe -o ./output --packTitle "ReCaps" --noPortable
         shell: pwsh
 
       - name: Create a Git Tag
