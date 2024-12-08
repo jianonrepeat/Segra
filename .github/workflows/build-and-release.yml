@@ -34,7 +34,7 @@ jobs:
           
           echo "GIT_LOG<<EOF" >> $GITHUB_ENV
           echo "$GIT_LOG" >> $GITHUB_ENV
-          echo "EOF"
+          echo "EOF" >> $GITHUB_ENV
 
       - name: Display Git Log
         run: |
