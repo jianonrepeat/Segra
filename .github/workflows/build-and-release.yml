@@ -95,16 +95,13 @@ jobs:
             exit 1
           fi
 
+          echo "Release notes:"
+          echo "$RELEASE_NOTES"
+
           # Set release_notes as output
           echo "release_notes<<EOF" >> $GITHUB_OUTPUT
           echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Display Release notes
-        shell: bash
-        run: |
-          echo "Release notes:"
-          echo "$RELEASE_NOTES"
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v3
