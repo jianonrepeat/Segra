@@ -11,13 +11,8 @@ namespace ReCaps.Backend.Utils
 {
     internal static class SettingsUtils
     {
-        public static readonly string SettingsFilePath =
-           Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ReCaps", "settings.json");
-        public static readonly string OBSDirectory =
-   Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ReCaps", "obs");
-        public static readonly string ffmpegFilePath =
-   Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ReCaps", "ffmpeg", "ffmpeg.exe");
-
+        public static readonly string SettingsFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ReCaps", "settings.json");
+        public static readonly string ffmpegFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ReCaps", "ffmpeg", "ffmpeg.exe");
 
         public static void SaveSettings()
         {
@@ -41,7 +36,6 @@ namespace ReCaps.Backend.Utils
                 {
                     WriteIndented = true
                 });
-
 
                 File.WriteAllText(SettingsFilePath, json);
                 Log.Information($"Settings saved to {SettingsFilePath}");

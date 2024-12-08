@@ -113,11 +113,11 @@ namespace ReCaps
                     .Load(appUrl);
 
                 // Initialize OBSUtils
-                Task.Run(() =>
+                Task.Run(async () =>
                 {
                     try
                     {
-                        OBSUtils.Initialize();
+                        await OBSUtils.InitializeAsync();
                         Log.Information("OBSUtils initialized successfully.");
                     }
                     catch (Exception ex)

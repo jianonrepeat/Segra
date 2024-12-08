@@ -4,6 +4,8 @@ using ReCaps;
 using ReCaps.Models;
 using Serilog;
 using System;
+using System.IO.Compression;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
 using static LibObs.Obs;
@@ -24,14 +26,11 @@ namespace ReCaps.Backend.Utils
             signalOutputStop = true;
         };
 
-        public static void Initialize()
+        public static async Task InitializeAsync()
         {
-            // TODO (os) implement
-            IsInitialized = true;
-            Settings.Instance.State.HasLoadedObs = true;
-            return;
-
             if (IsInitialized) return;
+
+            await CheckIfExistsOrDownloadAsync();
 
             if (obs_initialized())
                 throw new Exception("Error: OBS is already initialized.");
@@ -49,6 +48,7 @@ namespace ReCaps.Backend.Utils
                     Log.Error(e.StackTrace);
                 }
             }), IntPtr.Zero);
+
             Log.Information("libobs version: " + obs_get_version_string());
 
             if (!obs_startup("en-US", null, IntPtr.Zero))
@@ -56,8 +56,6 @@ namespace ReCaps.Backend.Utils
 
             obs_add_data_path("./data/libobs/");
             obs_add_module_path("./obs-plugins/64bit/", "./data/obs-plugins/%module%/");
-            //obs_add_data_path("C:/Users/admin/AppData/Local/ReCaps/obs/data/libobs/");
-            //obs_add_module_path("C:/Users/admin/AppData/Local/ReCaps/obs/obs-plugins/64bit/", "C:/Users/admin/AppData/Local/ReCaps/obs/data/obs-plugins/%module%/");
 
             obs_load_all_modules();
             obs_log_loaded_modules();
@@ -279,6 +277,62 @@ namespace ReCaps.Backend.Utils
                 obs_output_release(output);
                 output = IntPtr.Zero;
             }
+        }
+
+        private static async Task CheckIfExistsOrDownloadAsync()
+        {
+            Log.Information("Checking if OBS is installed");
+
+            string currentDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            string dllPath = Path.Combine(currentDirectory, "obs.dll");
+            if (File.Exists(dllPath))
+            {
+                Log.Information("OBS is installed");
+                return;
+            }
+
+            string zipPath = Path.Combine(currentDirectory, "obs.zip");
+            string apiUrl = "https://api.github.com/repos/Segergren/ReCaps/contents/obs.zip?ref=main";
+
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "ReCaps");
+                httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3.json");
+                httpClient.DefaultRequestHeaders.Add("Authorization", "token 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");
+
+                Log.Information("Fetching download URL...");
+                var response = await httpClient.GetAsync(apiUrl);
+                if (!response.IsSuccessStatusCode)
+                {
+                    Log.Error($"Failed to fetch metadata from {apiUrl}. Status: {response.StatusCode}");
+                    throw new Exception($"Failed to fetch file metadata: {response.ReasonPhrase}");
+                }
+
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                var metadata = System.Text.Json.JsonSerializer.Deserialize<GitHubFileMetadata>(jsonResponse);
+                if (metadata?.DownloadUrl == null)
+                {
+                    Log.Error("Download URL not found in the API response.");
+                    throw new Exception("Invalid API response: Missing download URL.");
+                }
+
+                Log.Information("Downloading OBS...");
+                httpClient.DefaultRequestHeaders.Clear();
+                var zipBytes = await httpClient.GetByteArrayAsync(metadata.DownloadUrl);
+                await File.WriteAllBytesAsync(zipPath, zipBytes);
+                Log.Information("Download complete");
+            }
+
+            Log.Information("Extracting OBS...");
+            ZipFile.ExtractToDirectory(zipPath, currentDirectory);
+            File.Delete(zipPath);
+            Log.Information("OBS setup complete");
+        }
+
+        private class GitHubFileMetadata
+        {
+            [System.Text.Json.Serialization.JsonPropertyName("download_url")]
+            public string DownloadUrl { get; set; }
         }
 
         private static void PlayStartSound()
