@@ -35,7 +35,7 @@ namespace ReCaps.Backend.Utils
             List<string> tempClipFiles = new List<string>();
 
             // Set the FFmpeg path as per your instruction
-            string ffmpegPath = SettingsUtils.ffmpegFilePath;
+            string ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "FFmpeg", "ffmpeg.exe");
 
             if (!File.Exists(ffmpegPath))
             {

@@ -77,7 +77,7 @@ namespace ReCaps.Backend.Utils
                 string thumbnailFilePath = Path.Combine(thumbnailsFolderPath, $"{contentFileName}.png");
 
                 // Locate the bundled FFmpeg executable
-                string ffmpegPath = SettingsUtils.ffmpegFilePath;
+                string ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "FFmpeg", "ffmpeg.exe");
                 if (!File.Exists(ffmpegPath))
                 {
                     Log.Information("FFmpeg binary not found in Resources/FFmpeg!");
@@ -140,7 +140,7 @@ namespace ReCaps.Backend.Utils
         }
         public static TimeSpan GetVideoDuration(string videoFilePath)
         {
-            string ffmpegPath = SettingsUtils.ffmpegFilePath;
+            string ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "FFmpeg", "ffmpeg.exe");
 
             try
             {

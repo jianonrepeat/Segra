@@ -46,6 +46,7 @@
 
 	<ItemGroup>
 	  <None Remove="Resources\app.png" />
+	  <None Remove="Resources\FFmpeg\ffmpeg.exe" />
 	  <None Remove="Resources\icon.ico" />
 	</ItemGroup>
 
