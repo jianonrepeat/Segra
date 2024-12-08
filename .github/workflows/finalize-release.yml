@@ -32,4 +32,4 @@ jobs:
             -H "Accept: application/vnd.github.v3+json" \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID \
-            -d '{"prerelease": false, "name": "Release v'"$VERSION"'", "body": "Updated release notes as final release"}'
+            -d '{"prerelease": false, "name": "Release v'"$VERSION"'", "make_latest": true}'
