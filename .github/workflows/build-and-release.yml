@@ -74,43 +74,20 @@ jobs:
           echo "new_version=$newVersion" >> $env:GITHUB_OUTPUT
         shell: pwsh
 
-      - name: Get Commit Messages
-        id: get_commits
+      - name: Find Previous Tag
+        id: find_previous_tag
         run: |
-          # Ensure tags are up-to-date
           git fetch --tags
-
-          # Get all tags sorted by creation date (newest first)
           $allTags = git tag --sort=-creatordate
-
-          if ($allTags.Count -gt 1) {
-            # We have more than one tag, so use the second-latest tag as the baseline
-            $previousTag = $allTags[1]
-            Write-Host "Previous tag used for comparison: $previousTag"
-            $commitLog = git log ${previousTag}..HEAD --pretty=format:"- **%an**: %s"
-
-            if ([string]::IsNullOrWhiteSpace($commitLog)) {
-              # No commits since last release
-              $commitLog = ""
-            }
+          if ($allTags.Count -gt 0) {
+            # The newest tag currently known is the "previous" tag since we haven't created the new one yet
+            $previousTag = $allTags[0]
+            echo "previous_tag=$previousTag" >> $env:GITHUB_OUTPUT
           } else {
-            # Only one or no tags, return all commits
-            Write-Host "No previous tag found; listing all commits."
-            $commitLog = git log --pretty=format:"- **%an**: %s"
+            # No previous tags at all
+            echo "previous_tag=" >> $env:GITHUB_OUTPUT
           }
-
-          # Ensure $commitLog is not null
-          $commits = $commitLog ?? ""
-
-          # Base64 encode to preserve formatting
-          $encodedCommits = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($commits))
-          echo "commit_messages=$encodedCommits" >> $env:GITHUB_OUTPUT
-
-          # For debugging purposes
-          Write-Host "Commits retrieved:"
-          Write-Host $commits
         shell: pwsh
-
 
       - name: Configure Git User
         run: |
@@ -159,6 +136,35 @@ jobs:
         run: |
           git tag v${{ env.new_version }}
           git push origin v${{ env.new_version }}
+        shell: pwsh
+
+      - name: Get Commit Messages
+        id: get_commits
+        run: |
+          $previousTag = "${{ steps.find_previous_tag.outputs.previous_tag }}"
+          git fetch --tags
+
+          if ([string]::IsNullOrWhiteSpace($previousTag)) {
+            # No previous tag, get all commits
+            Write-Host "No previous tag found; listing all commits."
+            $commitLog = git log --pretty=format:"- **%an**: %s"
+          } else {
+            # Get commits from previousTag to the new tag
+            Write-Host "Previous tag used for comparison: $previousTag"
+            $commitLog = git log $previousTag..v${{ env.new_version }} --pretty=format:"- **%an**: %s"
+
+            if ([string]::IsNullOrWhiteSpace($commitLog)) {
+              # No commits since last release
+              $commitLog = ""
+            }
+          }
+
+          $commits = $commitLog ?? ""
+          $encodedCommits = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($commits))
+          echo "commit_messages=$encodedCommits" >> $env:GITHUB_OUTPUT
+
+          Write-Host "Commits retrieved:"
+          Write-Host $commits
         shell: pwsh
 
       - name: Upload Release Artifact
@@ -246,15 +252,13 @@ jobs:
               }
           } catch {
               Write-Error "Failed to generate release notes: $_"
-              # Optionally, set a default message or fail the workflow
               echo "notes<<EOF" >> $GITHUB_OUTPUT
               echo "Failed to generate release notes." >> $GITHUB_OUTPUT
               echo "EOF" >> $GITHUB_OUTPUT
-              exit 1  # Exit with an error code to fail the step
+              exit 1
           }
         shell: pwsh
 
-      # **Debugging Step: Echo the Generated Release Notes**
       - name: Debug Release Notes
         run: |
           echo "Release Notes:"
