@@ -10,14 +10,10 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-
     permissions:
       contents: write
-
     outputs:
       new_version: ${{ steps.get_version.outputs.new_version }}
-      commit_messages: ${{ steps.get_commits.outputs.commit_messages }}
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -26,11 +22,23 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Checkout Submodules
+      - name: Get Git Log Between Last Tag and HEAD
+        id: get_git_log
         run: |
-          git submodule sync --recursive
-          git submodule update --init --recursive
-        shell: pwsh
+          LATEST_TAG=$(git describe --tags --abbrev=0)
+
+          GIT_LOG=$(git log "${LATEST_TAG}..HEAD" --no-merges --oneline)
+
+          echo "GIT_LOG<<EOF" >> $GITHUB_ENV
+          echo "$GIT_LOG" >> $GITHUB_ENV
+          echo "EOF"
+
+          echo "::set-output name=git_log::$GIT_LOG"
+
+      - name: Display Git Log
+        run: |
+          echo "Git Log since last tag:"
+          echo "$GIT_LOG"
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v3
@@ -45,48 +53,24 @@ jobs:
       - name: Determine Version
         id: get_version
         run: |
-          # Check if there are any tags
           $tags = git tag
           if ($tags -ne $null -and $tags.Count -gt 0) {
-            # Get the latest tag and remove the leading 'v' if present
             $latestTag = (git describe --tags --abbrev=0 2>$null) -replace '^v', ''
             if (-not $latestTag) {
               $latestTag = "0.0.0"
             }
           } else {
-            # Fallback to 0.0.0 if no tags exist
             $latestTag = "0.0.0"
           }
-
-          # Ensure $latestTag is a string
           $latestTag = [string]$latestTag
-
-          # Split the version into components
           $versionParts = $latestTag.Split('.')
           $major = [int]$versionParts[0]
           $minor = [int]$versionParts[1]
           $patch = [int]$versionParts[2]
-
-          # Increment the patch version
           $patch++
           $newVersion = "$major.$minor.$patch"
           echo "new_version=$newVersion" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
           echo "new_version=$newVersion" >> $env:GITHUB_OUTPUT
-        shell: pwsh
-
-      - name: Find Previous Tag
-        id: find_previous_tag
-        run: |
-          git fetch --tags
-          $allTags = git tag --sort=-creatordate
-          if ($allTags.Count -gt 0) {
-            # The newest tag currently known is the "previous" tag since we haven't created the new one yet
-            $previousTag = $allTags[0]
-            echo "previous_tag=$previousTag" >> $env:GITHUB_OUTPUT
-          } else {
-            # No previous tags at all
-            echo "previous_tag=" >> $env:GITHUB_OUTPUT
-          }
         shell: pwsh
 
       - name: Configure Git User
@@ -138,35 +122,6 @@ jobs:
           git push origin v${{ env.new_version }}
         shell: pwsh
 
-      - name: Get Commit Messages
-        id: get_commits
-        run: |
-          $previousTag = "${{ steps.find_previous_tag.outputs.previous_tag }}"
-          git fetch --tags
-
-          if ([string]::IsNullOrWhiteSpace($previousTag)) {
-            # No previous tag, get all commits
-            Write-Host "No previous tag found; listing all commits."
-            $commitLog = git log --pretty=format:"- **%an**: %s"
-          } else {
-            # Get commits from previousTag to the new tag
-            Write-Host "Previous tag used for comparison: $previousTag"
-            $commitLog = git log $previousTag..v${{ env.new_version }} --oneline
-            #
-            if ([string]::IsNullOrWhiteSpace($commitLog)) {
-              # No commits since last release
-              $commitLog = ""
-            }
-          }
-
-          $commits = $commitLog ?? ""
-          $encodedCommits = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($commits))
-          echo "commit_messages=$encodedCommits" >> $env:GITHUB_OUTPUT
-
-          Write-Host "Commits retrieved:"
-          Write-Host $commits
-        shell: pwsh
-
       - name: Upload Release Artifact
         uses: actions/upload-artifact@v3
         with:
@@ -176,94 +131,13 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
-
     permissions:
       contents: write
-
     steps:
       - name: Download Build Artifact
         uses: actions/download-artifact@v3
         with:
           name: ReCaps
-
-      - name: Debug Commit Messages
-        run: |
-          echo "Commit Messages:"
-          echo "${{ needs.build.outputs.commit_messages }}"
-        shell: pwsh
-
-      - name: Generate Release Notes with OpenAI
-        id: generate_release_notes
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: |
-          # Assign commit messages to a variable
-          $commitMessages = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String("${{ needs.build.outputs.commit_messages }}"))
-
-          # Define the JSON payload as a single string with embedded commit messages
-          $jsonPayload = @"
-          {
-            "model": "o1-preview",
-            "messages": [
-              {
-                "role": "assistant",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "You are a helpful assistant specializing in formatting release notes for open-source applications, specifically games and clip recorders. Your task is to take raw update information and organize it into well-structured, clear, and professional release notes. Ensure that the release notes include only the following sections:\n\n- **New Features:** Describe any new functionalities or features added to the application.\n- **Improvements:** Highlight enhancements made to existing features or overall performance.\n- **Bug Fixes:** List any issues that have been resolved.\n\nUse Markdown formatting for readability and consistency. Maintain a user-friendly and engaging tone suitable for the applications community. Ensure that the release notes are concise and easy to understand for normal users, avoiding unnecessary technical jargon. Do not include any sections that are not part of the release, such as Installation Instructions, Version headers, Known Issues, or Thank You messages. Prioritize clarity and organization to help users quickly grasp the updates and changes in the new release."
-                  }
-                ]
-              },
-              {
-                "role": "user",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "$commitMessages"
-                  }
-                ]
-              }
-            ]
-          }
-          "@
-
-          # Convert the JSON payload string to a single-line string
-          $body = $jsonPayload.Replace("`n", "").Replace("`r", "").Replace("`t", "").Trim()
-
-          try {
-              # Make the API call
-              $response = Invoke-RestMethod -Uri "https://api.openai.com/v1/chat/completions" `
-                  -Method POST `
-                  -Headers @{
-                      "Content-Type"  = "application/json"
-                      "Authorization" = "Bearer $env:OPENAI_API_KEY"
-                  } `
-                  -Body $body
-
-              # Check if the response contains choices
-              if ($response.choices.Count -gt 0) {
-                  $releaseNotes = $response.choices[0].message.content.Trim()
-                  # Set the release notes as an output variable
-                  echo "notes<<EOF" >> $GITHUB_OUTPUT
-                  echo "$releaseNotes" >> $GITHUB_OUTPUT
-                  echo "EOF" >> $GITHUB_OUTPUT
-              } else {
-                  throw "No choices returned in the OpenAI API response."
-              }
-          } catch {
-              Write-Error "Failed to generate release notes: $_"
-              echo "notes<<EOF" >> $GITHUB_OUTPUT
-              echo "Failed to generate release notes." >> $GITHUB_OUTPUT
-              echo "EOF" >> $GITHUB_OUTPUT
-              exit 1
-          }
-        shell: pwsh
-
-      - name: Debug Release Notes
-        run: |
-          echo "Release Notes:"
-          echo "${{ steps.generate_release_notes.outputs.notes }}"
-        shell: pwsh
 
       - name: Create GitHub Release
         id: create_release
@@ -273,12 +147,7 @@ jobs:
         with:
           tag_name: v${{ needs.build.outputs.new_version }}
           release_name: Release v${{ needs.build.outputs.new_version }}
-          body: ${{ steps.generate_release_notes.outputs.notes }}
-          draft: false
-          prerelease: false
-
-      - name: List Files in Current Directory
-        run: ls -la
+          body: "Release v${{ needs.build.outputs.new_version }}"
 
       - name: Upload Setup File
         uses: actions/upload-release-asset@v1
