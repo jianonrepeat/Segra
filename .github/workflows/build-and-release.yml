@@ -37,6 +37,7 @@ jobs:
           echo "EOF" >> $GITHUB_ENV
 
       - name: Display Git Log
+        shell: bash
         run: |
           echo "Git Log since last tag:"
           echo "$GIT_LOG"
