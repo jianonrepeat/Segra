@@ -269,25 +269,3 @@ jobs:
           asset_path: ./ReCaps-${{ needs.build.outputs.new_version }}-full.nupkg
           asset_name: ReCaps-${{ needs.build.outputs.new_version }}-full.nupkg
           asset_content_type: application/json
-
-  finalize-release:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    if: ${{ github.event_name == 'workflow_dispatch' }}
-    steps:
-      - name: Convert Pre-Release to Final
-        run: |
-          VERSION="${{ needs.build.outputs.new_version }}"
-          RELEASE_ID=$(curl -s \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            https://api.github.com/repos/${{ github.repository }}/releases/tags/v$VERSION \
-            | jq -r '.id')
-          
-          curl -s \
-            -X PATCH \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID \
-            -d '{"prerelease": false, "name": "Release v'"$VERSION"'", "body": "Updated release notes as final release"}'
