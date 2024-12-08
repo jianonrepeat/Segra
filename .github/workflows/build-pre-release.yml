@@ -197,7 +197,7 @@ jobs:
           name: ReCaps
           path: ./output
 
-  release:
+  pre-release:
     needs: build
     runs-on: ubuntu-latest
     permissions:
