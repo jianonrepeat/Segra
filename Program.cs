@@ -6,6 +6,7 @@ using ReCaps.Models;
 using Serilog;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Net;
 using Velopack;
 
@@ -17,14 +18,15 @@ namespace ReCaps
         public static PhotinoWindow window { get; private set; }
         private static readonly string LogFilePath =
           Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ReCaps", "logs.log");
+        private static NotifyIcon notifyIcon;
 
         [STAThread]
         static void Main(string[] args)
         {
-            var directory = Path.GetDirectoryName(LogFilePath);
-            if (!Directory.Exists(directory))
+            var logDirectory = Path.GetDirectoryName(LogFilePath);
+            if (!Directory.Exists(logDirectory))
             {
-                Directory.CreateDirectory(directory);
+                Directory.CreateDirectory(logDirectory);
             }
 
             // Configure Serilog
@@ -36,7 +38,7 @@ namespace ReCaps
                 .CreateLogger();
 
             VelopackApp.Build().Run();
-
+            
             Task.Run(() =>
             {
                 UpdateUtils.UpdateAppIfNecessary();
@@ -86,8 +88,6 @@ namespace ReCaps
                     string prefix = "http://localhost:2222/";
                     ContentServer.StartServer(prefix);
                 });
-                // Window title declared here for visibility
-                string windowTitle = "ReCaps";
 
                 SettingsUtils.LoadSettings();
                 hasLoadedInitialSettings = true;
@@ -99,9 +99,8 @@ namespace ReCaps
 
                 // Initialize the PhotinoWindow
                 window = new PhotinoWindow()
-                    //.SetIconFile("C:/Users/admin/Downloads/icon.ico")
-                    .SetTitle(windowTitle)
                     .SetUseOsDefaultSize(false)
+                    .SetIconFile("icon.ico")
                     .SetSize(new Size(1280, 720))
                     .Center()
                     .SetResizable(true)
@@ -112,7 +111,8 @@ namespace ReCaps
                     })
                     .Load(appUrl);
 
-                // Initialize OBSUtils
+                AddNotifyIcon();
+
                 Task.Run(async () =>
                 {
                     try
@@ -125,7 +125,11 @@ namespace ReCaps
                         Log.Error(ex, "Failed to initialize OBSUtils.");
                     }
                 });
-                window.WaitForClose(); // Starts the application event loop
+
+                // intentional space after name because of https://github.com/tryphotino/photino.NET/issues/106
+                window.SetTitle("ReCaps ");
+
+                window.WaitForClose();
             }
             catch (Exception ex)
             {
@@ -136,6 +140,48 @@ namespace ReCaps
                 Log.Information("Application shutting down.");
                 Log.CloseAndFlush(); // Ensure all logs are written before the application exits
             }
+        }
+
+        private static void AddNotifyIcon()
+        {
+            notifyIcon = new NotifyIcon
+            {
+                Icon = new Icon("icon.ico"),
+                Visible = true,
+                Text = "ReCaps"
+            };
+
+            var contextMenu = new ContextMenuStrip();
+            contextMenu.Items.Add("Open", null, (sender, e) =>
+            {
+                notifyIcon.Visible = false;
+                window.Minimized = false;
+            });
+            contextMenu.Items.Add("Exit", null, (sender, e) =>
+            {
+                notifyIcon.Visible = false;
+                Environment.Exit(0);
+            });
+
+            notifyIcon.ContextMenuStrip = contextMenu;
+
+            notifyIcon.MouseDoubleClick += (sender, e) =>
+            {
+                if (e.Button == MouseButtons.Left)
+                {
+                    notifyIcon.Visible = false;
+                    window.Minimized = false;
+                }
+            };
+
+            window.RegisterWindowClosingHandler((sender, eventArgs) =>
+            {
+                // TODO (os) Hide instead of minimize
+                window.Minimized = true;
+                notifyIcon.Visible = true;
+
+                return true;
+            });
         }
 
         private static string GetSolutionPath()

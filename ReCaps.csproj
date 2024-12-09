@@ -11,6 +11,8 @@
     	<!-- Generate embedded file manifest when using the Photino.NET StaticFileServer -->
 		<GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<PackageIcon>icon.png</PackageIcon>
+		<ApplicationIcon>icon.ico</ApplicationIcon>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -57,6 +59,16 @@
 	<ItemGroup>
 	  <None Include=".github\workflows\build-pre-release.yml" />
 	  <None Include=".github\workflows\finalize-release.yml" />
+	  <None Include="C:\Users\admin\Downloads\icon.png">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="icon.ico">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
 	</ItemGroup>
 
 	<ItemGroup>
