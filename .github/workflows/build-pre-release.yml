@@ -1,6 +1,8 @@
 name: Build and Create Pre-Release
 
 on:
+  push:
+    branches: [ main ]
   workflow_dispatch:
     inputs:
       release_type:
