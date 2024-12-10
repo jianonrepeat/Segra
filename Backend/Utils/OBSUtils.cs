@@ -1,13 +1,9 @@
 ﻿using LibObs;
 using NAudio.Wave;
-using ReCaps;
+using ReCaps.Backend.Services;
 using ReCaps.Models;
 using Serilog;
-using System;
 using System.IO.Compression;
-using System.Net;
-using System.Runtime.InteropServices;
-using System.Threading;
 using static LibObs.Obs;
 
 namespace ReCaps.Backend.Utils
@@ -64,9 +60,13 @@ namespace ReCaps.Backend.Utils
             IsInitialized = true;
             Settings.Instance.State.HasLoadedObs = true;
             Log.Information("OBS initialized successfully!");
+            Task.Run(() =>
+            {
+                GameDetectionService.Start();
+            });
         }
 
-        public static bool StartRecording()
+        public static bool StartRecording(string name = "Unknown")
         {
             if (output != IntPtr.Zero)
             {
@@ -192,7 +192,7 @@ namespace ReCaps.Backend.Utils
             {
                 StartTime = DateTime.Now,
                 FilePath = videoOutputPath,
-                Game = "Counter-Strike 2"
+                Game = name
             };
 
             MessageUtils.SendSettingsToFrontend();

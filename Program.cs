@@ -5,8 +5,6 @@ using ReCaps.Backend.Utils;
 using ReCaps.Models;
 using Serilog;
 using System.Diagnostics;
-using System.Drawing;
-using System.IO;
 using System.Net;
 using Velopack;
 
@@ -58,26 +56,29 @@ namespace ReCaps
 
                 if (IsDebugMode)
                 {
-                    var startInfo = new ProcessStartInfo
+                    Task.Run(() =>
                     {
-                        FileName = "cmd.exe",
-                        Arguments = "/c npm run dev",
-                        WorkingDirectory = Path.Join(GetSolutionPath(), @"Frontend")
-                    };
-                    Process process = null;
+                        var startInfo = new ProcessStartInfo
+                        {
+                            FileName = "cmd.exe",
+                            Arguments = "/c npm run dev",
+                            WorkingDirectory = Path.Join(GetSolutionPath(), @"Frontend")
+                        };
+                        Process process = null;
 
-                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create("http://localhost:2882/index.html");
-                    request.AllowAutoRedirect = false;
-                    request.Method = "HEAD";
+                        HttpWebRequest request = (HttpWebRequest)WebRequest.Create("http://localhost:2882/index.html");
+                        request.AllowAutoRedirect = false;
+                        request.Method = "HEAD";
 
-                    try
-                    {
-                        request.GetResponse();
-                    }
-                    catch (WebException)
-                    {
-                        process ??= Process.Start(startInfo);
-                    }
+                        try
+                        {
+                            request.GetResponse();
+                        }
+                        catch (WebException)
+                        {
+                            process ??= Process.Start(startInfo);
+                        }
+                    });
                 }
 
                 // Get the directory containing the executable
