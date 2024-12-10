@@ -4,12 +4,12 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using EventHook;
 using ReCaps.Models;
+using System;
 
 namespace ReCaps.Backend.Services
 {
     public static class GameDetectionService
     {
-        private static readonly string[] KnownGameExecutables = { "cs2.exe", "RocketLeague.exe" };
         static EventHookFactory eventHookFactory;
         private static ApplicationWatcher applicationWatcher;
         private static Process currentGameProcess;
@@ -47,12 +47,12 @@ namespace ReCaps.Backend.Services
                 var appPath = e.ApplicationData.AppPath;
                 Log.Information($"Window event: '{appName}' with title '{appTitle}' was {e.Event}");
 
-                if (IsGameProcess(Path.GetFileName(appPath)))
+                if (IsGameProcess(appPath))
                 {
                     if (e.Event == ApplicationEvents.Launched && Settings.Instance.State.Recording == null)
                     {
                         // Start recording
-                        OBSUtils.StartRecording(appName);
+                        OBSUtils.StartRecording(GameNameUtils.GetGameNameOrDefault(appName, appPath));
 
                         // Now we switch from window-based detection to process-based because
                         // DX11 programs seems to bypass ApplicationEvents.Closed events
@@ -116,9 +116,17 @@ namespace ReCaps.Backend.Services
             {
                 try
                 {
-                    if (IsGameProcess(proc.ProcessName + ".exe") && Settings.Instance.State.Recording == null)
+                    if (IsGameProcess(proc.MainModule.FileName) && Settings.Instance.State.Recording == null)
                     {
-                        OBSUtils.StartRecording(proc.ProcessName);
+                        try
+                        {
+                            string filePath = proc.MainModule.FileName;
+                            OBSUtils.StartRecording(GameNameUtils.GetGameNameOrDefault(proc.ProcessName, filePath));
+                        }
+                        catch (Exception ex)
+                        {
+                            OBSUtils.StartRecording(proc.ProcessName);
+                        }
 
                         if (!proc.HasExited)
                         {
@@ -140,10 +148,11 @@ namespace ReCaps.Backend.Services
             }
         }
 
-        private static bool IsGameProcess(string processName)
+        private static bool IsGameProcess(string filePath)
         {
-            return KnownGameExecutables.Any(g =>
-                string.Equals(g, processName, StringComparison.OrdinalIgnoreCase));
+            // TODO (os) implement Epic Games and ban anti-cheat windows
+
+            return filePath.Replace("\\", "/").Contains(GameNameUtils.SteamAppsCommonPath);
         }
     }
 }
