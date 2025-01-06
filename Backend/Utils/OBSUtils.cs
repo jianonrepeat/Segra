@@ -114,15 +114,16 @@ namespace ReCaps.Backend.Utils
             // Create display capture source
             IntPtr displayCaptureSettings = obs_data_create();
             obs_data_set_int(displayCaptureSettings, "monitor", 0); // Primary monitor
-            displaySource = obs_source_create("monitor_capture", "Display Capture", displayCaptureSettings, IntPtr.Zero);
+            displaySource = obs_source_create("monitor_capture", "display", displayCaptureSettings, IntPtr.Zero);
             obs_data_release(displayCaptureSettings);
 
             obs_set_output_source(0, displaySource);
 
             // Create video encoder
             IntPtr videoEncoderSettings = obs_data_create();
-            obs_data_set_string(videoEncoderSettings, "preset", "veryfast");
+            obs_data_set_string(videoEncoderSettings, "preset", "Quality");
             obs_data_set_string(videoEncoderSettings, "profile", "high");
+            obs_data_set_bool(videoEncoderSettings, "use_bufsize", true);
             obs_data_set_string(videoEncoderSettings, "rate_control", Settings.Instance.RateControl);
 
             switch (Settings.Instance.RateControl)
@@ -149,13 +150,13 @@ namespace ReCaps.Backend.Utils
                     throw new Exception("Unsupported Rate Control method.");
             }
 
-            videoEncoder = obs_video_encoder_create("obs_x264", "simple_x264_encoder", videoEncoderSettings, IntPtr.Zero);
+            videoEncoder = obs_video_encoder_create("jim_nvenc", "ReCaps Recorder", videoEncoderSettings, IntPtr.Zero);
             obs_data_release(videoEncoderSettings);
             obs_encoder_set_video(videoEncoder, obs_get_video());
 
             // Create audio encoder
             IntPtr audioEncoderSettings = obs_data_create();
-            obs_data_set_int(audioEncoderSettings, "bitrate", 160);
+            obs_data_set_int(audioEncoderSettings, "bitrate", 128);
             audioEncoder = obs_audio_encoder_create("ffmpeg_aac", "simple_aac_encoder", audioEncoderSettings, 0, IntPtr.Zero);
             obs_data_release(audioEncoderSettings);
             obs_encoder_set_audio(audioEncoder, obs_get_audio());
@@ -250,6 +251,7 @@ namespace ReCaps.Backend.Utils
         {
             if (displaySource != IntPtr.Zero)
             {
+                obs_source_remove(displaySource);
                 obs_source_release(displaySource);
                 displaySource = IntPtr.Zero;
             }
@@ -259,11 +261,15 @@ namespace ReCaps.Backend.Utils
         {
             if (videoEncoder != IntPtr.Zero)
             {
+                var reference = obs_encoder_get_ref(videoEncoder);
+                obs_encoder_release(reference);
                 obs_encoder_release(videoEncoder);
                 videoEncoder = IntPtr.Zero;
             }
             if (audioEncoder != IntPtr.Zero)
             {
+                var reference = obs_encoder_get_ref(audioEncoder);
+                obs_encoder_release(reference);
                 obs_encoder_release(audioEncoder);
                 audioEncoder = IntPtr.Zero;
             }
@@ -273,7 +279,9 @@ namespace ReCaps.Backend.Utils
         {
             if (output != IntPtr.Zero)
             {
-                signal_handler_disconnect(obs_output_get_signal_handler(output), "stop", outputStopCallback, IntPtr.Zero);
+                var reference = obs_output_get_ref(output);
+                signal_handler_disconnect(obs_output_get_signal_handler(reference), "stop", outputStopCallback, IntPtr.Zero);
+                obs_output_release(reference);
                 obs_output_release(output);
                 output = IntPtr.Zero;
             }
