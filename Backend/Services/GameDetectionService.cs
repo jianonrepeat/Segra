@@ -151,6 +151,10 @@ namespace ReCaps.Backend.Services
         private static bool IsGameProcess(string filePath)
         {
             // TODO (os) implement Epic Games and ban anti-cheat windows
+            if (filePath == null)
+            {
+                return false;
+            }
 
             return filePath.Replace("\\", "/").Contains(GameNameUtils.SteamAppsCommonPath);
         }
