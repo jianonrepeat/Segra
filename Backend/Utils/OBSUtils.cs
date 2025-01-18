@@ -347,7 +347,7 @@ namespace ReCaps.Backend.Utils
             {
                 httpClient.DefaultRequestHeaders.Add("User-Agent", "ReCaps");
                 httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3.json");
-                httpClient.DefaultRequestHeaders.Add("Authorization", "token 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");
+                httpClient.DefaultRequestHeaders.Add("Authorization", "token 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");
 
                 Log.Information("Fetching download URL...");
                 var response = await httpClient.GetAsync(apiUrl);
