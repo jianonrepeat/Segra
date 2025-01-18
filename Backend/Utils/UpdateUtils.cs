@@ -18,7 +18,7 @@ namespace ReCaps.Backend.Utils
                 Log.Information("Checking if update is necessary");
 
                 // Read access to ReCaps. Remove when Public
-                string token = "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";
+                string token = "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";
 
                 var source = new GithubSource("https://github.com/Segergren/ReCaps", token, false);
                 var mgr = new UpdateManager(source);

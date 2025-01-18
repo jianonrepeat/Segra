@@ -4,6 +4,7 @@ using ReCaps.Backend.Services;
 using ReCaps.Models;
 using Serilog;
 using System.IO.Compression;
+using System.Text.RegularExpressions;
 using static LibObs.Obs;
 
 namespace ReCaps.Backend.Utils
@@ -22,6 +23,8 @@ namespace ReCaps.Backend.Utils
             signalOutputStop = true;
         };
 
+        private static bool _isGameCaptureHooked = false;
+
         public static async Task InitializeAsync()
         {
             if (IsInitialized) return;
@@ -36,6 +39,14 @@ namespace ReCaps.Backend.Utils
                 try
                 {
                     string formattedMessage = MarshalUtils.GetLogMessage(msg, args);
+                    if (formattedMessage.Contains("Starting capture"))
+                    {
+                        _isGameCaptureHooked = true;
+                    }
+                    if (formattedMessage.Contains("capture stopped"))
+                    {
+                        _isGameCaptureHooked = false;
+                    }
                     Log.Information($"{((LogErrorLevel)level)}: {formattedMessage}");
                 }
                 catch (Exception e)
@@ -112,12 +123,25 @@ namespace ReCaps.Backend.Utils
                 throw new Exception("Failed to reset video settings.");
 
             // Create display capture source
-            IntPtr displayCaptureSettings = obs_data_create();
-            obs_data_set_int(displayCaptureSettings, "monitor", 0); // Primary monitor
-            displaySource = obs_source_create("monitor_capture", "display", displayCaptureSettings, IntPtr.Zero);
-            obs_data_release(displayCaptureSettings);
-
+            _isGameCaptureHooked = false;
+            IntPtr videoSourceSettings = obs_data_create();
+            obs_data_set_string(videoSourceSettings, "capture_mode", "any_fullscreen");
+            displaySource = obs_source_create("game_capture", "gameplay", videoSourceSettings, IntPtr.Zero);
+            obs_data_release(videoSourceSettings);
             obs_set_output_source(0, displaySource);
+
+            bool hooked = WaitUntilGameCaptureHooks();
+            if (!hooked)
+            {
+                Log.Error("Game Capture did not hook within 30 seconds.");
+                DisposeSources();
+
+                Log.Information("Using display capture instead");
+                IntPtr displayCaptureSettings = obs_data_create();
+                displaySource = obs_source_create("monitor_capture", "display", displayCaptureSettings, IntPtr.Zero);
+                obs_data_release(displayCaptureSettings);
+                obs_set_output_source(0, displaySource);
+            }
 
             // Create video encoder
             IntPtr videoEncoderSettings = obs_data_create();
@@ -245,6 +269,23 @@ namespace ReCaps.Backend.Utils
                 SettingsUtils.LoadContentFromFolderIntoState(false);
                 Settings.Instance.State.Recording = null;
             }
+        }
+
+        private static bool WaitUntilGameCaptureHooks(int timeoutMs = 30000)
+        {
+            int elapsed = 0;
+            const int step = 100;
+
+            while (!_isGameCaptureHooked)
+            {
+                Thread.Sleep(step);
+                elapsed += step;
+                if (elapsed >= timeoutMs)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         public static void DisposeSources()

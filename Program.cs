@@ -118,7 +118,7 @@ namespace ReCaps
                 {
                     try
                     {
-                        await OBSUtils.InitializeAsync();
+                        await Task.Run(() => OBSUtils.InitializeAsync());
                         Log.Information("OBSUtils initialized successfully.");
                     }
                     catch (Exception ex)
