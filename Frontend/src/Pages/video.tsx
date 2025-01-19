@@ -476,7 +476,7 @@ export default function VideoComponent({video}: VideoProps) {
 	return (
 		<DndProvider backend={HTML5Backend}>
 			<div className="flex" ref={containerRef} style={{width: "100%", height: "100%"}}>
-				<div className="flex-1 p-4">
+				<div className="flex-1 p-4 w-4/5">
 					<div className="aspect-w-16 aspect-h-9 bg-black rounded">
 						<video
 							autoPlay
