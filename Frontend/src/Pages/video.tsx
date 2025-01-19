@@ -33,12 +33,16 @@ function SelectionCard({
 	selection,
 	index,
 	moveCard,
-	formatTime
+	formatTime,
+	isHovered,
+	setHoveredSelectionId
 }: {
 	selection: Selection;
 	index: number;
 	moveCard: (dragIndex: number, hoverIndex: number) => void;
 	formatTime: (time: number) => string;
+	isHovered: boolean;
+	setHoveredSelectionId: (id: number | null) => void;
 }) {
 	const [{isDragging}, dragRef] = useDrag(() => ({
 		type: DRAG_TYPE,
@@ -67,9 +71,15 @@ function SelectionCard({
 	const opacity = isDragging ? 0.3 : 1;
 
 	return (
-		<div ref={dragDropRef} className="mb-2 cursor-move w-full relative" style={{opacity}}>
+		<div
+			ref={dragDropRef}
+			className={`mb-2 cursor-move w-full relative rounded-xl ${isHovered ? "outline outline-1 outline-primary" : ""}`}
+			style={{opacity}}
+			onMouseEnter={() => setHoveredSelectionId(selection.id)}
+			onMouseLeave={() => setHoveredSelectionId(null)}
+		>
 			{isLoading ? (
-				<div className="flex items-center justify-center h-24 bg-base-100 bg-opacity-75 rounded-xl">
+				<div className="flex items-center justify-center bg-base-100 bg-opacity-75 rounded-xl w-full aspect-[16/9]">
 					<span className="loading loading-spinner loading-md text-white" />
 					<div className="absolute bottom-2 right-2 bg-base-100 bg-opacity-75 text-white text-xs px-2 py-1 rounded">
 						{formatTime(startTime)} - {formatTime(endTime)}
@@ -107,6 +117,8 @@ export default function VideoComponent({video}: VideoProps) {
 	const [resizeDirection, setResizeDirection] = useState<"start" | "end" | null>(null);
 	const [isInteracting, setIsInteracting] = useState(false);
 	const [dragState, setDragState] = useState<{id: number | null; offset: number}>({id: null, offset: 0});
+	const [hoveredSelectionId, setHoveredSelectionId] = useState<number | null>(null);
+	const [isHoveredByTimeline, setIsHoveredByTimeline] = useState<boolean>(false);
 
 	const refreshSelectionThumbnail = async (selection: Selection): Promise<void> => {
 		setSelections((prev) => {
@@ -574,19 +586,22 @@ export default function VideoComponent({video}: VideoProps) {
 							{sortedSelections.map((sel) => {
 								const left = sel.startTime * pixelsPerSecond;
 								const width = (sel.endTime - sel.startTime) * pixelsPerSecond;
+								const isHovered = sel.id === hoveredSelectionId;
 								return (
 									<div
 										key={sel.id}
+										className={`absolute top-0 left-0 h-full cursor-move border overflow-hidden ${isHovered && !isHoveredByTimeline ? "border-primary bg-primary" : "border-secondary bg-secondary" }`}
 										style={{
-											position: "absolute",
-											top: 0,
 											left: `${left}px`,
 											width: `${width}px`,
-											height: "100%",
-											backgroundColor: "oklch(var(--in))",
-											cursor: "move",
-											border: "1px solid #0080ff",
-											overflow: "hidden"
+										}}
+										onMouseEnter={() => {
+											setHoveredSelectionId(sel.id);
+											setIsHoveredByTimeline(true);
+										}}
+										onMouseLeave={() => {
+											setHoveredSelectionId(null);
+											setIsHoveredByTimeline(false);
 										}}
 										onMouseDown={(e) => handleSelectionDragStart(e, sel.id)}
 										onContextMenu={(e) => handleSelectionContextMenu(e, sel.id)}
@@ -681,6 +696,8 @@ export default function VideoComponent({video}: VideoProps) {
 								index={index}
 								moveCard={moveCard}
 								formatTime={formatTime}
+								isHovered={hoveredSelectionId === sel.id}
+								setHoveredSelectionId={setHoveredSelectionId}
 							/>
 						))}
 					</div>
