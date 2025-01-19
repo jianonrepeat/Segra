@@ -64,9 +64,6 @@ export const initialSettings: Settings = {
 	contentFolder: '',
 	inputDevice: '',
 	outputDevice: '',
-	keyframeInterval: 2,
-	preset: 'medium',
-	profile: 'main',
 	state: initialState,
 };
 
