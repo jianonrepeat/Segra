@@ -75,9 +75,6 @@ namespace ReCaps.Backend.Utils
                     Settings.Instance.StorageLimit = loadedSettings.StorageLimit;
                     Settings.Instance.InputDevice = loadedSettings.InputDevice;
                     Settings.Instance.OutputDevice = loadedSettings.OutputDevice;
-                    Settings.Instance.KeyframeInterval = loadedSettings.KeyframeInterval;
-                    Settings.Instance.Preset = loadedSettings.Preset;
-                    Settings.Instance.Profile = loadedSettings.Profile;
 
                     Settings.Instance.RateControl = loadedSettings.RateControl;
                     Settings.Instance.CrfValue = loadedSettings.CrfValue;
@@ -191,27 +188,6 @@ namespace ReCaps.Backend.Utils
             {
                 Log.Information($"OutputDevice changed from '{settings.OutputDevice}' to '{updatedSettings.OutputDevice}'");
                 settings.OutputDevice = updatedSettings.OutputDevice;
-            }
-
-            // Update KeyframeInterval
-            if (settings.KeyframeInterval != updatedSettings.KeyframeInterval)
-            {
-                Log.Information($"KeyframeInterval changed from '{settings.KeyframeInterval} seconds' to '{updatedSettings.KeyframeInterval} seconds'");
-                settings.KeyframeInterval = updatedSettings.KeyframeInterval;
-            }
-
-            // Update Preset
-            if (settings.Preset != updatedSettings.Preset)
-            {
-                Log.Information($"Preset changed from '{settings.Preset}' to '{updatedSettings.Preset}'");
-                settings.Preset = updatedSettings.Preset;
-            }
-
-            // Update Profile
-            if (settings.Profile != updatedSettings.Profile)
-            {
-                Log.Information($"Profile changed from '{settings.Profile}' to '{updatedSettings.Profile}'");
-                settings.Profile = updatedSettings.Profile;
             }
 
             // Update RateControl

@@ -54,7 +54,6 @@
 
 	<ItemGroup>
 	  <Folder Include="Frontend\public\" />
-	  <Folder Include="Frontend\src\assets\" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -38,9 +38,6 @@ export interface Settings {
 	contentFolder: string;
 	inputDevice: string;
 	outputDevice: string;
-	keyframeInterval: number;
-	preset: 'fast' | 'medium' | 'slow';
-	profile: 'baseline' | 'main' | 'high';
 	state: State;
 }
 

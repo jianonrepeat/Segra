@@ -29,9 +29,6 @@ namespace ReCaps.Models
         private int _storageLimit = 100;
         private string _inputDevice = string.Empty;
         private string _outputDevice = string.Empty;
-        private int _keyframeInterval = 2;
-        private string _preset = "medium";
-        private string _profile = "main";
         private State _state = new State();
 
         // Begin bulk update suppression
@@ -184,36 +181,6 @@ namespace ReCaps.Models
             set
             {
                 _outputDevice = value;
-            }
-        }
-
-        [JsonPropertyName("keyframeInterval")]
-        public int KeyframeInterval
-        {
-            get => _keyframeInterval;
-            set
-            {
-                _keyframeInterval = value;
-            }
-        }
-
-        [JsonPropertyName("preset")]
-        public string Preset
-        {
-            get => _preset;
-            set
-            {
-                _preset = value;
-            }
-        }
-
-        [JsonPropertyName("profile")]
-        public string Profile
-        {
-            get => _profile;
-            set
-            {
-                _profile = value;
             }
         }
 
