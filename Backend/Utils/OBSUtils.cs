@@ -149,7 +149,6 @@ namespace ReCaps.Backend.Utils
             obs_data_set_string(videoEncoderSettings, "profile", "high");
             obs_data_set_bool(videoEncoderSettings, "use_bufsize", true);
             obs_data_set_string(videoEncoderSettings, "rate_control", Settings.Instance.RateControl);
-
             switch (Settings.Instance.RateControl)
             {
                 case "CBR":
@@ -177,6 +176,26 @@ namespace ReCaps.Backend.Utils
             videoEncoder = obs_video_encoder_create("jim_nvenc", "ReCaps Recorder", videoEncoderSettings, IntPtr.Zero);
             obs_data_release(videoEncoderSettings);
             obs_encoder_set_video(videoEncoder, obs_get_video());
+
+            // Create microphone input
+            if (Settings.Instance.InputDevice != null && Settings.Instance.InputDevice != "")
+            {
+                IntPtr micSettings = obs_data_create();
+                obs_data_set_string(micSettings, "device_id", Settings.Instance.InputDevice);
+                IntPtr micSource = obs_source_create("wasapi_input_capture", "Microphone", micSettings, IntPtr.Zero);
+                obs_data_release(micSettings);
+                obs_set_output_source(1, micSource);
+            }
+
+            // Create desktop output
+            if (Settings.Instance.OutputDevice != null && Settings.Instance.OutputDevice != "")
+            {
+                IntPtr desktopSettings = obs_data_create();
+                obs_data_set_string(desktopSettings, "device_id", Settings.Instance.OutputDevice);
+                IntPtr desktopSource = obs_source_create("wasapi_output_capture", "DesktopAudio", desktopSettings, IntPtr.Zero);
+                obs_data_release(desktopSettings);
+                obs_set_output_source(2, desktopSource);
+            }
 
             // Create audio encoder
             IntPtr audioEncoderSettings = obs_data_create();
