@@ -229,9 +229,10 @@ export default function VideoComponent({video}: VideoProps) {
 			const newScrollLeft = timeAtCursor * newPPS - (e.clientX - rect.left);
 			container.scrollLeft = newScrollLeft;
 		};
-		container.addEventListener("wheel", handleWheel, {passive: false});
+		const wheelEventOptions: AddEventListenerOptions = {passive: false};
+		container.addEventListener("wheel", handleWheel, wheelEventOptions);
 		return () => {
-			container.removeEventListener("wheel", handleWheel, {passive: false});
+			container.removeEventListener("wheel", handleWheel, wheelEventOptions);
 		};
 	}, [zoom, duration, containerWidth]);
 
