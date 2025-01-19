@@ -1,10 +1,6 @@
 ﻿using Serilog;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using System.Web;
 
 namespace ReCaps.Backend.ContentServer
@@ -19,7 +15,6 @@ namespace ReCaps.Backend.ContentServer
             _httpListener.Prefixes.Add(prefix);
             _httpListener.Start();
             Console.WriteLine($"Server started at {prefix}");
-
             _httpListener.BeginGetContext(OnRequest, null);
         }
 
@@ -27,6 +22,7 @@ namespace ReCaps.Backend.ContentServer
         {
             try
             {
+                _httpListener.BeginGetContext(OnRequest, null);
                 var context = _httpListener.EndGetContext(result);
                 var request = context.Request;
                 var response = context.Response;
@@ -48,13 +44,10 @@ namespace ReCaps.Backend.ContentServer
                     }
                     response.Close();
                 }
-
-                _httpListener.BeginGetContext(OnRequest, null);
             }
             catch (HttpListenerException ex)
             {
-                // Log and suppress disconnection errors
-                if (ex.ErrorCode != 995) // 995: The I/O operation has been aborted (client disconnect)
+                if (ex.ErrorCode != 995)
                 {
                     Log.Error(ex, "HttpListenerException occurred.");
                 }
@@ -65,45 +58,138 @@ namespace ReCaps.Backend.ContentServer
             }
         }
 
-
         private static void HandleThumbnailRequest(HttpListenerContext context)
         {
             var query = HttpUtility.ParseQueryString(context.Request.Url.Query);
             string input = query["input"];
-
+            string timeParam = query["time"];
             var response = context.Response;
 
             try
             {
-                if (File.Exists(input))
-                {
-                    byte[] buffer = File.ReadAllBytes(input);
-                    response.ContentType = "image/jpeg"; // Change to appropriate MIME type if needed
-                    response.AddHeader("Cache-Control", "public, max-age=86400");
-                    response.AddHeader("Expires", DateTime.UtcNow.AddDays(1).ToString("R"));
+                Log.Information("HandleThumbnailRequest started: input={Input}, time={TimeParam}", input, timeParam);
+                response.AddHeader("Access-Control-Allow-Origin", "*");
 
-                    var lastModified = File.GetLastWriteTimeUtc(input);
-                    response.AddHeader("Last-Modified", lastModified.ToString("R"));
-
-                    response.ContentLength64 = buffer.Length;
-                    response.OutputStream.Write(buffer, 0, buffer.Length);
-                }
-                else
+                if (!File.Exists(input))
                 {
+                    Log.Warning("Thumbnail request file not found: {Input}", input);
                     response.StatusCode = (int)HttpStatusCode.NotFound;
                     using (var writer = new StreamWriter(response.OutputStream))
                     {
-                        writer.Write("Thumbnail not found.");
+                        writer.Write("File not found.");
+                    }
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(timeParam))
+                {
+                    Log.Information("No time param provided; serving existing thumbnail from disk: {Input}", input);
+                    byte[] buffer = File.ReadAllBytes(input);
+                    response.ContentType = "image/jpeg";
+                    response.AddHeader("Cache-Control", "public, max-age=86400");
+                    response.AddHeader("Expires", DateTime.UtcNow.AddDays(1).ToString("R"));
+                    var lastModified = File.GetLastWriteTimeUtc(input);
+                    response.AddHeader("Last-Modified", lastModified.ToString("R"));
+                    response.ContentLength64 = buffer.Length;
+                    response.OutputStream.Write(buffer, 0, buffer.Length);
+                    Log.Information("Served existing thumbnail: {Input} (length={Length} bytes)", input, buffer.Length);
+                }
+                else
+                {
+                    Log.Information("Time param is {TimeParam}; generating on-the-fly thumbnail from {Input}", timeParam, input);
+                    if (!double.TryParse(timeParam, System.Globalization.NumberStyles.AllowDecimalPoint, System.Globalization.CultureInfo.InvariantCulture, out double timeSeconds))
+                    {
+                        Log.Warning("Could not parse timeParam={TimeParam} as double, using 0.0 fallback", timeParam);
+                        timeSeconds = 0.0;
+                    }
+
+                    string tempFile = Path.GetTempFileName();
+                    string tempFilePng = Path.ChangeExtension(tempFile, ".png");
+                    string ffmpegPath = "ffmpeg.exe";
+                    if (!File.Exists(ffmpegPath))
+                    {
+                        Log.Error("FFmpeg executable not found: {FfmpegPath}", ffmpegPath);
+                        response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                        using (var writer = new StreamWriter(response.OutputStream))
+                        {
+                            writer.Write("FFmpeg not found on server.");
+                        }
+                        return;
+                    }
+
+                    string timeString = timeSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    string ffmpegArgs = $"-y -ss {timeString} -i \"{input}\" -frames:v 1 -pattern_type none \"{tempFilePng}\"";
+                    Log.Information("Running FFmpeg: {FfmpegPath} {FfmpegArgs}", ffmpegPath, ffmpegArgs);
+
+                    var processInfo = new ProcessStartInfo
+                    {
+                        FileName = ffmpegPath,
+                        Arguments = ffmpegArgs,
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        CreateNoWindow = true
+                    };
+
+                    using (var ffmpegProcess = new Process { StartInfo = processInfo })
+                    {
+                        ffmpegProcess.Start();
+                        string ffmpegStdOut = ffmpegProcess.StandardOutput.ReadToEnd();
+                        string ffmpegStdErr = ffmpegProcess.StandardError.ReadToEnd();
+                        ffmpegProcess.WaitForExit();
+                        if (ffmpegProcess.ExitCode != 0)
+                        {
+                            Log.Error("FFmpeg error (exit={ExitCode}). Stderr={StdErr}, Stdout={StdOut}", ffmpegProcess.ExitCode, ffmpegStdErr, ffmpegStdOut);
+                            response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                            using (var writer = new StreamWriter(response.OutputStream))
+                            {
+                                writer.Write($"FFmpeg error:\n{ffmpegStdErr}");
+                            }
+                            return;
+                        }
+                        else
+                        {
+                            Log.Information("FFmpeg completed successfully. Stderr={StdErr}, Stdout={StdOut}", ffmpegStdErr, ffmpegStdOut);
+                        }
+                    }
+
+                    if (File.Exists(tempFilePng))
+                    {
+                        byte[] pngBytes = File.ReadAllBytes(tempFilePng);
+                        response.ContentType = "image/png";
+                        response.AddHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+                        response.AddHeader("Pragma", "no-cache");
+                        response.AddHeader("Expires", "0");
+                        response.ContentLength64 = pngBytes.Length;
+                        response.OutputStream.Write(pngBytes, 0, pngBytes.Length);
+                        Log.Information("Served on-the-fly thumbnail: {TempFilePng} (length={Length} bytes) at time={TimeSeconds}", tempFilePng, pngBytes.Length, timeSeconds);
+                        try
+                        {
+                            File.Delete(tempFile);
+                            File.Delete(tempFilePng);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Warning(ex, "Error cleaning up temp files ({TempFile} / {TempFilePng}).", tempFile, tempFilePng);
+                        }
+                    }
+                    else
+                    {
+                        Log.Error("Temp thumbnail not generated at: {TempFilePng}", tempFilePng);
+                        response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                        using (var writer = new StreamWriter(response.OutputStream))
+                        {
+                            writer.Write("Temp thumbnail not generated.");
+                        }
                     }
                 }
             }
             catch (HttpListenerException ex)
             {
-                // Client disconnection. Do nothing.
+                Log.Warning(ex, "HttpListenerException in HandleThumbnailRequest, possibly client disconnected.");
             }
             catch (Exception ex)
             {
-                // Log unexpected exceptions
                 Log.Error(ex, "Unexpected error while processing thumbnail request.");
                 response.StatusCode = (int)HttpStatusCode.InternalServerError;
                 using (var writer = new StreamWriter(response.OutputStream))
@@ -124,7 +210,6 @@ namespace ReCaps.Backend.ContentServer
             }
         }
 
-
         private static void HandleContentRequest(HttpListenerContext context)
         {
             try
@@ -132,7 +217,6 @@ namespace ReCaps.Backend.ContentServer
                 var query = HttpUtility.ParseQueryString(context.Request.Url.Query);
                 string fileName = query["input"];
                 string type = query["type"];
-
                 var response = context.Response;
 
                 if (File.Exists(fileName))
@@ -144,7 +228,6 @@ namespace ReCaps.Backend.ContentServer
 
                     if (!string.IsNullOrEmpty(rangeHeader) && rangeHeader.StartsWith("bytes="))
                     {
-                        // Parse Range header
                         string[] range = rangeHeader.Substring("bytes=".Length).Split('-');
                         if (!string.IsNullOrEmpty(range[0]))
                             start = long.Parse(range[0]);
@@ -170,14 +253,13 @@ namespace ReCaps.Backend.ContentServer
                     using (FileStream fs = new FileStream(fileName, FileMode.Open, FileAccess.Read))
                     {
                         fs.Seek(start, SeekOrigin.Begin);
-                        byte[] buffer = new byte[64 * 1024]; // 64KB buffer
+                        byte[] buffer = new byte[64 * 1024];
                         long bytesRemaining = contentLength;
                         while (bytesRemaining > 0)
                         {
                             int bytesRead = fs.Read(buffer, 0, (int)Math.Min(buffer.Length, bytesRemaining));
                             if (bytesRead == 0)
                                 break;
-
                             response.OutputStream.Write(buffer, 0, bytesRead);
                             bytesRemaining -= bytesRead;
                         }
@@ -195,14 +277,12 @@ namespace ReCaps.Backend.ContentServer
             }
             catch (HttpListenerException ex)
             {
-                // Normal, do nothing.
             }
             catch (Exception ex)
             {
                 Log.Error(ex.Message, ex);
             }
         }
-
 
         public static void StopServer()
         {

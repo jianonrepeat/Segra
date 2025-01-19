@@ -8,6 +8,8 @@ import Video from './Pages/video';
 import {ModalProvider} from './Context/ModalContext';
 import {useSelectedVideo} from './Context/SelectedVideoContext';
 import {themeChange} from 'theme-change';
+import {HTML5Backend} from 'react-dnd-html5-backend';
+import {DndProvider} from 'react-dnd';
 
 function App() {
 	useEffect(() => {
@@ -24,7 +26,12 @@ function App() {
 
 	const renderContent = () => {
 		if (selectedVideo) {
-			return <Video video={selectedVideo} />;
+
+			return (
+				<DndProvider backend={HTML5Backend}>
+					<Video video={selectedVideo} />
+				</DndProvider>
+			);
 		}
 
 		switch (selectedMenu) {
@@ -44,7 +51,7 @@ function App() {
 					<div className="h-full">
 						<Menu selectedMenu={selectedMenu} onSelectMenu={handleMenuSelection} />
 					</div>
-					<div className="flex-1 p-3 max-h-full overflow-auto">
+					<div className="flex-1 max-h-full overflow-auto">
 						{renderContent()}
 					</div>
 				</div>

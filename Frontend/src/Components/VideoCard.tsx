@@ -73,6 +73,7 @@ export default function ContentCard({content, type, onClick, isLoading}: VideoCa
 					src={thumbnailPath}
 					alt={"thumbnail"}
 					className="w-full h-full object-cover"
+					loading="lazy"
 					width={1600}
 					height={900}
 				/>

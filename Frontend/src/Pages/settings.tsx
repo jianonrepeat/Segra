@@ -38,7 +38,7 @@ export default function Settings() {
   const outputDeviceName = selectedOutputDevice ? selectedOutputDevice.name : settings.outputDevice ? 'Unavailable Device' : 'Select Output Device';
 
   return (
-    <div className="p-2 space-y-6 rounded-lg">
+    <div className="p-5 space-y-6 rounded-lg">
       <h1 className="text-3xl font-bold">Settings</h1>
 
       {/* Theme Selection */}

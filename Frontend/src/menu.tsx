@@ -17,7 +17,7 @@ export default function Menu({selectedMenu, onSelectMenu}: MenuProps) {
 			<ul className="menu">
 				<li>
 					<a
-						className={selectedMenu === 'Videos' ? 'active py-3' : 'py-3'}
+						className={selectedMenu === 'Videos' ? 'py-3' : 'py-3'}
 						onClick={() => onSelectMenu('Videos')}
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 24 24" fill="none">
@@ -29,7 +29,7 @@ export default function Menu({selectedMenu, onSelectMenu}: MenuProps) {
 				</li>
 				<li>
 					<a
-						className={selectedMenu === 'Clips' ? 'active py-3' : 'py-3'}
+						className={selectedMenu === 'Clips' ? 'py-3' : 'py-3'}
 						onClick={() => onSelectMenu('Clips')}
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 24 24" fill="none">
@@ -40,7 +40,7 @@ export default function Menu({selectedMenu, onSelectMenu}: MenuProps) {
 				</li>
 				<li>
 					<a
-						className={selectedMenu === 'Settings' ? 'active py-3' : 'py-3'}
+						className={selectedMenu === 'Settings' ? 'py-3' : 'py-3'}
 						onClick={() => onSelectMenu('Settings')}
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 24 24" fill="none">
