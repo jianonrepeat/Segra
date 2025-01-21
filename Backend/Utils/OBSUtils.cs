@@ -73,10 +73,7 @@ namespace ReCaps.Backend.Utils
             Settings.Instance.State.HasLoadedObs = true;
             Log.Information("OBS initialized successfully!");
 
-            Task.Run(() =>
-            {
-                GameDetectionService.Start();
-            });
+            _ = Task.Run(GameDetectionService.Start);
         }
 
         public static bool StartRecording(string name = "Unknown")
