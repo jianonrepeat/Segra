@@ -129,7 +129,7 @@ namespace ReCaps.Backend.ContentServer
                         CreateNoWindow = true
                     };
 
-                    byte[] pngBytes;
+                    byte[] jpegBytes;
                     using (var ffmpegProcess = new Process { StartInfo = processInfo })
                     {
                         ffmpegProcess.Start();
@@ -138,7 +138,7 @@ namespace ReCaps.Backend.ContentServer
                         using (var ms = new MemoryStream())
                         {
                             ffmpegProcess.StandardOutput.BaseStream.CopyTo(ms);
-                            pngBytes = ms.ToArray();
+                            jpegBytes = ms.ToArray();
                         }
 
                         // Read any error messages
@@ -161,15 +161,15 @@ namespace ReCaps.Backend.ContentServer
                     }
 
                     // Serve the image directly from memory
-                    if (pngBytes != null && pngBytes.Length > 0)
+                    if (jpegBytes != null && jpegBytes.Length > 0)
                     {
-                        response.ContentType = "image/png";
+                        response.ContentType = "image/jpeg";
                         response.AddHeader("Cache-Control", "no-cache, no-store, must-revalidate");
                         response.AddHeader("Pragma", "no-cache");
                         response.AddHeader("Expires", "0");
-                        response.ContentLength64 = pngBytes.Length;
-                        response.OutputStream.Write(pngBytes, 0, pngBytes.Length);
-                        Log.Information("Served on-the-fly thumbnail (length={Length} bytes) at time={TimeSeconds}", pngBytes.Length, timeSeconds);
+                        response.ContentLength64 = jpegBytes.Length;
+                        response.OutputStream.Write(jpegBytes, 0, jpegBytes.Length);
+                        Log.Information("Served on-the-fly thumbnail (length={Length} bytes) at time={TimeSeconds}", jpegBytes.Length, timeSeconds);
                     }
                     else
                     {
