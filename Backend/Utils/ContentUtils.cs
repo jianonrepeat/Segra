@@ -74,7 +74,7 @@ namespace ReCaps.Backend.Utils
                 }
 
                 // Define the output thumbnail file path
-                string thumbnailFilePath = Path.Combine(thumbnailsFolderPath, $"{contentFileName}.png");
+                string thumbnailFilePath = Path.Combine(thumbnailsFolderPath, $"{contentFileName}.jpeg");
 
                 // Locate the bundled FFmpeg executable
                 string ffmpegPath = "ffmpeg.exe";
@@ -99,7 +99,7 @@ namespace ReCaps.Backend.Utils
                 string midpointTime = midpoint.ToString(@"hh\:mm\:ss\.fff", CultureInfo.InvariantCulture);
 
                 // FFmpeg arguments to extract a thumbnail at 5 seconds
-                string ffmpegArgs = $"-ss {midpointTime} -i \"{filePath}\" -vframes 1 \"{thumbnailFilePath}\"";
+                string ffmpegArgs = $"-ss {midpointTime} -i \"{filePath}\" -vf \"scale=720:-1\" -qscale:v 12 -vframes 1 \"{thumbnailFilePath}\"";
 
                 // Run FFmpeg as a process
                 ProcessStartInfo processInfo = new ProcessStartInfo
