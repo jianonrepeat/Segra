@@ -103,8 +103,6 @@ namespace ReCaps.Backend.ContentServer
                         timeSeconds = 0.0;
                     }
 
-                    string tempFile = Path.GetTempFileName();
-                    string tempFilePng = Path.ChangeExtension(tempFile, ".png");
                     string ffmpegPath = "ffmpeg.exe";
                     if (!File.Exists(ffmpegPath))
                     {
@@ -118,7 +116,7 @@ namespace ReCaps.Backend.ContentServer
                     }
 
                     string timeString = timeSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                    string ffmpegArgs = $"-y -ss {timeString} -i \"{input}\" -frames:v 1 -pattern_type none \"{tempFilePng}\"";
+                    string ffmpegArgs = $"-y -ss {timeString} -i \"{input}\" -frames:v 1 -vf scale=320:-1 -f image2pipe -vcodec mjpeg -q:v 20 pipe:1";
                     Log.Information("Running FFmpeg: {FfmpegPath} {FfmpegArgs}", ffmpegPath, ffmpegArgs);
 
                     var processInfo = new ProcessStartInfo
@@ -131,15 +129,24 @@ namespace ReCaps.Backend.ContentServer
                         CreateNoWindow = true
                     };
 
+                    byte[] pngBytes;
                     using (var ffmpegProcess = new Process { StartInfo = processInfo })
                     {
                         ffmpegProcess.Start();
-                        string ffmpegStdOut = ffmpegProcess.StandardOutput.ReadToEnd();
+
+                        // Read the image bytes from stdout.
+                        using (var ms = new MemoryStream())
+                        {
+                            ffmpegProcess.StandardOutput.BaseStream.CopyTo(ms);
+                            pngBytes = ms.ToArray();
+                        }
+
+                        // Read any error messages
                         string ffmpegStdErr = ffmpegProcess.StandardError.ReadToEnd();
                         ffmpegProcess.WaitForExit();
                         if (ffmpegProcess.ExitCode != 0)
                         {
-                            Log.Error("FFmpeg error (exit={ExitCode}). Stderr={StdErr}, Stdout={StdOut}", ffmpegProcess.ExitCode, ffmpegStdErr, ffmpegStdOut);
+                            Log.Error("FFmpeg error (exit={ExitCode}). Stderr={StdErr}", ffmpegProcess.ExitCode, ffmpegStdErr);
                             response.StatusCode = (int)HttpStatusCode.InternalServerError;
                             using (var writer = new StreamWriter(response.OutputStream))
                             {
@@ -149,37 +156,28 @@ namespace ReCaps.Backend.ContentServer
                         }
                         else
                         {
-                            Log.Information("FFmpeg completed successfully. Stderr={StdErr}, Stdout={StdOut}", ffmpegStdErr, ffmpegStdOut);
+                            Log.Information("FFmpeg completed successfully. (Stderr={StdErr})", ffmpegStdErr);
                         }
                     }
 
-                    if (File.Exists(tempFilePng))
+                    // Serve the image directly from memory
+                    if (pngBytes != null && pngBytes.Length > 0)
                     {
-                        byte[] pngBytes = File.ReadAllBytes(tempFilePng);
                         response.ContentType = "image/png";
                         response.AddHeader("Cache-Control", "no-cache, no-store, must-revalidate");
                         response.AddHeader("Pragma", "no-cache");
                         response.AddHeader("Expires", "0");
                         response.ContentLength64 = pngBytes.Length;
                         response.OutputStream.Write(pngBytes, 0, pngBytes.Length);
-                        Log.Information("Served on-the-fly thumbnail: {TempFilePng} (length={Length} bytes) at time={TimeSeconds}", tempFilePng, pngBytes.Length, timeSeconds);
-                        try
-                        {
-                            File.Delete(tempFile);
-                            File.Delete(tempFilePng);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Warning(ex, "Error cleaning up temp files ({TempFile} / {TempFilePng}).", tempFile, tempFilePng);
-                        }
+                        Log.Information("Served on-the-fly thumbnail (length={Length} bytes) at time={TimeSeconds}", pngBytes.Length, timeSeconds);
                     }
                     else
                     {
-                        Log.Error("Temp thumbnail not generated at: {TempFilePng}", tempFilePng);
+                        Log.Error("No thumbnail data received from FFmpeg.");
                         response.StatusCode = (int)HttpStatusCode.InternalServerError;
                         using (var writer = new StreamWriter(response.OutputStream))
                         {
-                            writer.Write("Temp thumbnail not generated.");
+                            writer.Write("Failed to generate thumbnail.");
                         }
                     }
                 }
