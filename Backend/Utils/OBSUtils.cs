@@ -15,6 +15,8 @@ namespace ReCaps.Backend.Utils
         static bool signalOutputStop = false;
         static IntPtr output = IntPtr.Zero;
         static IntPtr displaySource = IntPtr.Zero;
+        static IntPtr micSource = IntPtr.Zero;
+        static IntPtr desktopSource = IntPtr.Zero;
         static IntPtr videoEncoder = IntPtr.Zero;
         static IntPtr audioEncoder = IntPtr.Zero;
 
@@ -182,7 +184,7 @@ namespace ReCaps.Backend.Utils
             {
                 IntPtr micSettings = obs_data_create();
                 obs_data_set_string(micSettings, "device_id", Settings.Instance.InputDevice);
-                IntPtr micSource = obs_source_create("wasapi_input_capture", "Microphone", micSettings, IntPtr.Zero);
+                micSource = obs_source_create("wasapi_input_capture", "Microphone", micSettings, IntPtr.Zero);
                 obs_data_release(micSettings);
                 obs_set_output_source(1, micSource);
             }
@@ -192,7 +194,7 @@ namespace ReCaps.Backend.Utils
             {
                 IntPtr desktopSettings = obs_data_create();
                 obs_data_set_string(desktopSettings, "device_id", Settings.Instance.OutputDevice);
-                IntPtr desktopSource = obs_source_create("wasapi_output_capture", "DesktopAudio", desktopSettings, IntPtr.Zero);
+                desktopSource = obs_source_create("wasapi_output_capture", "DesktopAudio", desktopSettings, IntPtr.Zero);
                 obs_data_release(desktopSettings);
                 obs_set_output_source(2, desktopSource);
             }
@@ -314,6 +316,20 @@ namespace ReCaps.Backend.Utils
                 obs_source_remove(displaySource);
                 obs_source_release(displaySource);
                 displaySource = IntPtr.Zero;
+            }
+
+            if (micSource != IntPtr.Zero)
+            {
+                obs_source_remove(micSource);
+                obs_source_release(micSource);
+                micSource = IntPtr.Zero;
+            }
+
+            if (desktopSource != IntPtr.Zero)
+            {
+                obs_source_remove(desktopSource);
+                obs_source_release(desktopSource);
+                desktopSource = IntPtr.Zero;
             }
         }
 
