@@ -10,6 +10,7 @@ import {useSelectedVideo} from './Context/SelectedVideoContext';
 import {themeChange} from 'theme-change';
 import {HTML5Backend} from 'react-dnd-html5-backend';
 import {DndProvider} from 'react-dnd';
+import {SelectionsProvider} from './Context/SelectionsContext';
 
 function App() {
 	useEffect(() => {
@@ -26,7 +27,6 @@ function App() {
 
 	const renderContent = () => {
 		if (selectedVideo) {
-
 			return (
 				<DndProvider backend={HTML5Backend}>
 					<Video video={selectedVideo} />
@@ -47,14 +47,16 @@ function App() {
 	return (
 		<SettingsProvider>
 			<ModalProvider>
-				<div className="flex h-screen">
-					<div className="h-full">
-						<Menu selectedMenu={selectedMenu} onSelectMenu={handleMenuSelection} />
+				<SelectionsProvider>
+					<div className="flex h-screen">
+						<div className="h-full">
+							<Menu selectedMenu={selectedMenu} onSelectMenu={handleMenuSelection} />
+						</div>
+						<div className="flex-1 max-h-full overflow-auto">
+							{renderContent()}
+						</div>
 					</div>
-					<div className="flex-1 max-h-full overflow-auto">
-						{renderContent()}
-					</div>
-				</div>
+				</SelectionsProvider>
 			</ModalProvider>
 		</SettingsProvider >
 	);

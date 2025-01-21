@@ -92,33 +92,42 @@ namespace ReCaps.Backend.Utils
         private static async Task HandleCreateClip(JsonElement message)
         {
             Log.Information($"{message}");
-            // Extract FileName and Selections
-            if (message.TryGetProperty("FileName", out JsonElement fileNameElement) &&
-                message.TryGetProperty("Selections", out JsonElement selectionsElement))
+
+            if (message.TryGetProperty("Selections", out JsonElement selectionsElement))
             {
-                string fileName = fileNameElement.GetString();
-                List<Selection> selections = new List<Selection>();
-
-                message.TryGetProperty("Game", out JsonElement gameElement);
-                string? game = gameElement.GetString();
-
+                var selections = new List<Selection>();
                 foreach (var selectionElement in selectionsElement.EnumerateArray())
                 {
                     if (selectionElement.TryGetProperty("startTime", out JsonElement startTimeElement) &&
-                        selectionElement.TryGetProperty("endTime", out JsonElement endTimeElement))
+                        selectionElement.TryGetProperty("endTime", out JsonElement endTimeElement) &&
+                        selectionElement.TryGetProperty("fileName", out JsonElement fileNameElement))
                     {
                         double startTime = startTimeElement.GetDouble();
                         double endTime = endTimeElement.GetDouble();
-                        selections.Add(new Selection { StartTime = startTime, EndTime = endTime });
+                        string fileName = fileNameElement.GetString();
+
+                        string? game = null;
+                        if (selectionElement.TryGetProperty("game", out JsonElement gameElement))
+                        {
+                            game = gameElement.GetString();
+                        }
+
+                        // Create a new Selection instance with all required properties.
+                        selections.Add(new Selection
+                        {
+                            StartTime = startTime,
+                            EndTime = endTime,
+                            FileName = fileName,
+                            Game = game
+                        });
                     }
                 }
 
-                // Now process the selections using ClipUtils
-                await Task.Run(() => ClipUtils.CreateClips(fileName, game, selections));
+                await ClipUtils.CreateClips(selections);
             }
             else
             {
-                Log.Information("FileName or Selections property not found in CreateClip message.");
+                Log.Information("Selections property not found in CreateClip message.");
             }
         }
 
@@ -329,5 +338,7 @@ namespace ReCaps.Backend.Utils
     {
         public double StartTime { get; set; }
         public double EndTime { get; set; }
+        public string FileName { get; set; }
+        public string? Game { get; set; }
     }
 }

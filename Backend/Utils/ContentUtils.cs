@@ -99,7 +99,7 @@ namespace ReCaps.Backend.Utils
                 string midpointTime = midpoint.ToString(@"hh\:mm\:ss\.fff", CultureInfo.InvariantCulture);
 
                 // FFmpeg arguments to extract a thumbnail at 5 seconds
-                string ffmpegArgs = $"-ss {midpointTime} -i \"{filePath}\" -vf \"scale=720:-1\" -qscale:v 12 -vframes 1 \"{thumbnailFilePath}\"";
+                string ffmpegArgs = $"-ss {midpointTime} -i \"{filePath}\" -vf \"scale=720:-1\" -qscale:v 9 -vframes 1 \"{thumbnailFilePath}\"";
 
                 // Run FFmpeg as a process
                 ProcessStartInfo processInfo = new ProcessStartInfo

@@ -4,6 +4,7 @@ import {sendMessageToBackend} from "../Utils/MessageUtils";
 import {useSettings} from "../Context/SettingsContext";
 import {useDrag, useDrop, DndProvider} from "react-dnd";
 import {HTML5Backend} from "react-dnd-html5-backend";
+import {useSelections} from "../Context/SelectionsContext";
 
 interface Selection {
 	id: number;
@@ -11,6 +12,18 @@ interface Selection {
 	endTime: number;
 	thumbnailDataUrl?: string;
 	isLoading: boolean;
+	fileName: string;
+	game?: string;
+}
+
+interface SelectionCardProps {
+	selection: Selection;
+	index: number;
+	moveCard: (dragIndex: number, hoverIndex: number) => void;
+	formatTime: (time: number) => string;
+	isHovered: boolean;
+	setHoveredSelectionId: (id: number | null) => void;
+	removeSelection: (id: number) => void;
 }
 
 interface VideoProps {
@@ -35,15 +48,11 @@ function SelectionCard({
 	moveCard,
 	formatTime,
 	isHovered,
-	setHoveredSelectionId
-}: {
-	selection: Selection;
-	index: number;
-	moveCard: (dragIndex: number, hoverIndex: number) => void;
-	formatTime: (time: number) => string;
-	isHovered: boolean;
-	setHoveredSelectionId: (id: number | null) => void;
-}) {
+	setHoveredSelectionId,
+	removeSelection
+}:
+	SelectionCardProps
+) {
 	const [{isDragging}, dragRef] = useDrag(() => ({
 		type: DRAG_TYPE,
 		item: {index},
@@ -77,6 +86,10 @@ function SelectionCard({
 			style={{opacity}}
 			onMouseEnter={() => setHoveredSelectionId(selection.id)}
 			onMouseLeave={() => setHoveredSelectionId(null)}
+			onContextMenu={(e) => {
+				e.preventDefault();
+				removeSelection(selection.id);
+			}}
 		>
 			{isLoading ? (
 				<div className="flex items-center justify-center bg-base-100 bg-opacity-75 rounded-xl w-full aspect-[16/9]">
@@ -112,7 +125,7 @@ export default function VideoComponent({video}: VideoProps) {
 	const [zoom, setZoom] = useState(1);
 	const [isDragging, setIsDragging] = useState(false);
 	const [containerWidth, setContainerWidth] = useState(0);
-	const [selections, setSelections] = useState<Selection[]>([]);
+	const {selections, addSelection, updateSelection, removeSelection, updateSelectionsArray, clearAllSelections} = useSelections();
 	const [resizingSelectionId, setResizingSelectionId] = useState<number | null>(null);
 	const [resizeDirection, setResizeDirection] = useState<"start" | "end" | null>(null);
 	const [isInteracting, setIsInteracting] = useState(false);
@@ -121,33 +134,19 @@ export default function VideoComponent({video}: VideoProps) {
 	const [isHoveredByTimeline, setIsHoveredByTimeline] = useState<boolean>(false);
 
 	const refreshSelectionThumbnail = async (selection: Selection): Promise<void> => {
-		setSelections((prev) => {
-			const updated = [...prev];
-			const idx = updated.findIndex((s) => s.id === selection.id);
-			if (idx < 0) return prev;
-			updated[idx] = {...updated[idx], isLoading: true};
-			return updated;
-		});
+		updateSelection({...selection, isLoading: true});
 		try {
 			const contentFileName = `${contentFolder}/${video.type.toLowerCase()}s/${video.fileName}.mp4`;
 			const thumbnailUrl = await fetchThumbnailAtTime(contentFileName, selection.startTime);
-			setSelections((prev) => {
-				const updated = [...prev];
-				const idx = updated.findIndex((s) => s.id === selection.id);
-				if (idx < 0) return prev;
-				updated[idx] = {...updated[idx], thumbnailDataUrl: thumbnailUrl, isLoading: false};
-				return updated;
-			});
+			updateSelection({...selection, thumbnailDataUrl: thumbnailUrl, isLoading: false});
 		} catch {
-			setSelections((prev) => {
-				const updated = [...prev];
-				const idx = updated.findIndex((s) => s.id === selection.id);
-				if (idx < 0) return prev;
-				updated[idx] = {...updated[idx], isLoading: false};
-				return updated;
-			});
+			updateSelection({...selection, isLoading: false});
 		}
 	};
+
+	useEffect(() => {
+		console.log(selections);
+	}, [selections]);
 
 	useEffect(() => {
 		const vid = videoRef.current;
@@ -324,29 +323,28 @@ export default function VideoComponent({video}: VideoProps) {
 			startTime: start,
 			endTime: end,
 			thumbnailDataUrl: undefined,
-			isLoading: true
+			isLoading: true,
+			fileName: video.fileName,
+			game: video.game,
 		};
-		setSelections((prev) => [...prev, newSelection]);
+		addSelection(newSelection);
 		try {
 			const contentFileName = `${contentFolder}/${video.type.toLowerCase()}s/${video.fileName}.mp4`;
 			const thumbnailUrl = await fetchThumbnailAtTime(contentFileName, start);
-			setSelections((prev) =>
-				prev.map((sel) =>
-					sel.id === newSelection.id ? {...sel, thumbnailDataUrl: thumbnailUrl, isLoading: false} : sel
-				)
-			);
+			updateSelection({...newSelection, thumbnailDataUrl: thumbnailUrl, isLoading: false});
 		} catch {
-			setSelections((prev) =>
-				prev.map((sel) => (sel.id === newSelection.id ? {...sel, isLoading: false} : sel))
-			);
+			updateSelection({...newSelection, isLoading: false});
 		}
 	};
 
 	const handleCreateClip = () => {
 		const params = {
-			FileName: video.fileName,
-			Game: video.game,
-			Selections: selections.map((s) => ({startTime: s.startTime, endTime: s.endTime}))
+			Selections: selections.map((s) => ({
+				fileName: s.fileName,
+				game: s.game,
+				startTime: s.startTime,
+				endTime: s.endTime,
+			}))
 		};
 		sendMessageToBackend("CreateClip", params);
 	};
@@ -369,19 +367,16 @@ export default function VideoComponent({video}: VideoProps) {
 		const rect = scrollContainerRef.current.getBoundingClientRect();
 		const dragPos = e.clientX - rect.left + scrollContainerRef.current.scrollLeft;
 		const cursorTime = dragPos / pixelsPerSecond;
-		setSelections((prev) => {
-			const newSelections = [...prev];
-			const index = newSelections.findIndex((s) => s.id === dragState.id);
-			if (index >= 0) {
-				const sel = newSelections[index];
-				const segLength = sel.endTime - sel.startTime;
-				let newStart = cursorTime - dragState.offset;
-				newStart = Math.max(0, Math.min(newStart, duration - segLength));
-				newSelections[index] = {...sel, startTime: newStart, endTime: newStart + segLength};
-				latestDraggedSelectionRef.current = newSelections[index];
-			}
-			return newSelections;
-		});
+
+		const sel = selections.find((s) => s.id === dragState.id);
+		if (sel) {
+			const segLength = sel.endTime - sel.startTime;
+			let newStart = cursorTime - dragState.offset;
+			newStart = Math.max(0, Math.min(newStart, duration - segLength));
+			const updatedSelection = {...sel, startTime: newStart, endTime: newStart + segLength};
+			updateSelection(updatedSelection);
+			latestDraggedSelectionRef.current = updatedSelection;
+		}
 	};
 
 	const handleSelectionDragEnd = async () => {
@@ -427,20 +422,19 @@ export default function VideoComponent({video}: VideoProps) {
 		const rect = scrollContainerRef.current.getBoundingClientRect();
 		const pos = e.clientX - rect.left + scrollContainerRef.current.scrollLeft;
 		const t = pos / pixelsPerSecond;
-		setSelections((prev) =>
-			prev.map((sel) => {
-				if (sel.id !== resizingSelectionId) return sel;
-				if (resizeDirection === "start") {
-					const newStart = Math.max(0, Math.min(t, sel.endTime - 0.1));
-					latestDraggedSelectionRef.current = {...sel, startTime: newStart};
-					return {...sel, startTime: newStart};
-				} else {
-					const newEnd = Math.min(duration, Math.max(t, sel.startTime + 0.1));
-					latestDraggedSelectionRef.current = {...sel, endTime: newEnd};
-					return {...sel, endTime: newEnd};
-				}
-			})
-		);
+		const sel = selections.find((s) => s.id === resizingSelectionId);
+		if (!sel) return;
+
+		let updatedSelection;
+		if (resizeDirection === "start") {
+			const newStart = Math.max(0, Math.min(t, sel.endTime - 0.1));
+			updatedSelection = {...sel, startTime: newStart};
+		} else {
+			const newEnd = Math.min(duration, Math.max(t, sel.startTime + 0.1));
+			updatedSelection = {...sel, endTime: newEnd};
+		}
+		latestDraggedSelectionRef.current = updatedSelection;
+		updateSelection(updatedSelection);
 	};
 
 	const handleSelectionResizeEnd = async () => {
@@ -454,18 +448,17 @@ export default function VideoComponent({video}: VideoProps) {
 
 	const handleSelectionContextMenu = (e: React.MouseEvent<HTMLDivElement>, id: number) => {
 		e.preventDefault();
-		setSelections((prev) => prev.filter((s) => s.id !== id));
+		removeSelection(id);
 	};
 
 	const sortedSelections = [...selections].sort((a, b) => a.startTime - b.startTime);
 
 	const moveCard = (dragIndex: number, hoverIndex: number) => {
-		setSelections((prev) => {
-			const updated = [...prev];
-			const [removed] = updated.splice(dragIndex, 1);
-			updated.splice(hoverIndex, 0, removed);
-			return updated;
-		});
+		const newSelections = [...selections];
+		const [removed] = newSelections.splice(dragIndex, 1);
+		newSelections.splice(hoverIndex, 0, removed);
+		//updated.forEach((sel) => updateSelection(sel));
+		updateSelectionsArray(newSelections);
 	};
 
 	const getVideoPath = (): string => {
@@ -480,7 +473,7 @@ export default function VideoComponent({video}: VideoProps) {
 					<div className="">
 						<video
 							autoPlay
-							className="relative rounded-lg w-full overflow-hidden aspect-w-16 aspect-h-9 max-h-[calc(100vh-100px)] md:max-h-[calc(100vh-200px)]"
+							className={`relative rounded-lg w-full overflow-hidden aspect-w-16 aspect-h-9 max-h-[calc(100vh-100px)] ${video.type === "Video" ? "md:max-h-[calc(100vh-200px)]" : "md:max-h-[calc(100vh-140px)]"}  aspect-w-16 aspect-h-9`}
 							src={getVideoPath()}
 							ref={videoRef}
 							onClick={togglePlayPause}
@@ -587,10 +580,11 @@ export default function VideoComponent({video}: VideoProps) {
 								const left = sel.startTime * pixelsPerSecond;
 								const width = (sel.endTime - sel.startTime) * pixelsPerSecond;
 								const isHovered = sel.id === hoveredSelectionId;
+								const hidden = sel.fileName !== video.fileName;
 								return (
 									<div
 										key={sel.id}
-										className={`absolute top-0 left-0 h-full cursor-move border overflow-hidden ${isHovered && !isHoveredByTimeline ? "border-primary bg-primary" : "border-secondary bg-secondary"}`}
+										className={`absolute top-0 left-0 h-full shadow cursor-move ${hidden ? "hidden" : ""}  overflow-hidden ${isHovered && !isHoveredByTimeline ? "bg-primary" : "bg-secondary"}`}
 										style={{
 											left: `${left}px`,
 											width: `${width}px`,
@@ -687,8 +681,8 @@ export default function VideoComponent({video}: VideoProps) {
 					)}
 				</div>
 				{video.type === "Video" && (
-					<div className="bg-base-300 text-neutral-content w-52 2xl:w-72 overflow-y-scroll pl-4 pr-1">
-						<h2 className="text-lg font-bold mb-2 mt-3">Selections</h2>
+					<div className="bg-base-300 text-neutral-content w-52 2xl:w-72 flex flex-col h-full pl-4 pr-1 pt-4">
+						<div className="overflow-y-scroll flex-1  mt-1 p-1">
 						{selections.map((sel, index) => (
 							<SelectionCard
 								key={sel.id}
@@ -698,8 +692,19 @@ export default function VideoComponent({video}: VideoProps) {
 								formatTime={formatTime}
 								isHovered={hoveredSelectionId === sel.id}
 								setHoveredSelectionId={setHoveredSelectionId}
+								removeSelection={removeSelection}
 							/>
 						))}
+						</div>
+						<div className="bottom-0 border-base-200 bg-base-300 pt-2 pb-2 px-4 me-3">
+							<button
+								className="btn btn-secondary text-neutral-content w-full shadow-lg"
+								onClick={clearAllSelections}
+								disabled={selections.length === 0}
+							>
+								Remove All
+							</button>
+						</div>
 					</div>
 				)}
 			</div>
