@@ -226,7 +226,7 @@ namespace ReCaps.Backend.Utils
 
                 // Construct the thumbnail file path
                 string thumbnailsFolderPath = Path.Combine(Settings.Instance.ContentFolder, ".thumbnails", type.ToString().ToLower() + "s");
-                string thumbnailFilePath = Path.Combine(thumbnailsFolderPath, $"{contentFileName}.png");
+                string thumbnailFilePath = Path.Combine(thumbnailsFolderPath, $"{contentFileName}.jpeg");
 
                 // Delete the thumbnail file if it exists
                 if (File.Exists(thumbnailFilePath))
