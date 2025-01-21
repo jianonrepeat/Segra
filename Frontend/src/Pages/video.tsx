@@ -476,12 +476,11 @@ export default function VideoComponent({video}: VideoProps) {
 	return (
 		<DndProvider backend={HTML5Backend}>
 			<div className="flex" ref={containerRef} style={{width: "100%", height: "100%"}}>
-				<div className="flex-1 p-4 w-4/5">
-					<div className="aspect-w-16 aspect-h-9 bg-black rounded">
+				<div className="flex-1 p-4 w-full lg:w-3/4">
+					<div className="">
 						<video
 							autoPlay
-							className="w-full h-full rounded"
-							style={{maxHeight: "71.3vh"}}
+							className="relative rounded-lg w-full overflow-hidden aspect-w-16 aspect-h-9 max-h-[calc(100vh-100px)] md:max-h-[calc(100vh-200px)]"
 							src={getVideoPath()}
 							ref={videoRef}
 							onClick={togglePlayPause}
@@ -591,7 +590,7 @@ export default function VideoComponent({video}: VideoProps) {
 								return (
 									<div
 										key={sel.id}
-										className={`absolute top-0 left-0 h-full cursor-move border overflow-hidden ${isHovered && !isHoveredByTimeline ? "border-primary bg-primary" : "border-secondary bg-secondary" }`}
+										className={`absolute top-0 left-0 h-full cursor-move border overflow-hidden ${isHovered && !isHoveredByTimeline ? "border-primary bg-primary" : "border-secondary bg-secondary"}`}
 										style={{
 											left: `${left}px`,
 											width: `${width}px`,
@@ -688,7 +687,7 @@ export default function VideoComponent({video}: VideoProps) {
 					)}
 				</div>
 				{video.type === "Video" && (
-					<div className="bg-base-300 w-52 overflow-y-scroll pl-4 pr-1">
+					<div className="bg-base-300 text-neutral-content w-52 2xl:w-72 overflow-y-scroll pl-4 pr-1">
 						<h2 className="text-lg font-bold mb-2 mt-3">Selections</h2>
 						{selections.map((sel, index) => (
 							<SelectionCard
