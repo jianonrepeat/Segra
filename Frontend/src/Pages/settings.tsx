@@ -42,26 +42,30 @@ export default function Settings() {
 			<h1 className="text-3xl font-bold">Settings</h1>
 
 			{/* Theme Selection */}
-			<select
-				name="theme"
-				value={settings.theme}
-				onChange={handleChange}
-				data-choose-theme
-				className="select select-bordered w-full max-w-xs"
-			>
-				<option value="recaps">ReCaps</option>
-				<option value="rich">Rich</option>
-				<option value="dark">Dark</option>
-				<option value="night">Night</option>
-				<option value="dracula">Dracula</option>
-				<option value="black">Black</option>
-				<option value="luxury">Luxury</option>
-				<option value="forest">Forest</option>
-				<option value="halloween">Halloween</option>
-				<option value="coffee">Coffee</option>
-				<option value="dim">Dim</option>
-				<option value="sunset">Sunset</option>
-			</select>
+			{
+				/*
+					<select
+						name="theme"
+						value={settings.theme}
+						onChange={handleChange}
+						data-choose-theme
+						className="select select-bordered w-full max-w-xs"
+					>
+						<option value="segra">Segra</option>
+						<option value="rich">Rich</option>
+						<option value="dark">Dark</option>
+						<option value="night">Night</option>
+						<option value="dracula">Dracula</option>
+						<option value="black">Black</option>
+						<option value="luxury">Luxury</option>
+						<option value="forest">Forest</option>
+						<option value="halloween">Halloween</option>
+						<option value="coffee">Coffee</option>
+						<option value="dim">Dim</option>
+						<option value="sunset">Sunset</option>
+					</select>
+				*/
+			}
 
 			{/* Video Settings */}
 			<div className="p-4 bg-base-300 rounded-lg shadow-md">

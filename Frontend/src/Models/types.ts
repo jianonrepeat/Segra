@@ -25,7 +25,7 @@ export interface Recording {
 }
 
 export interface Settings {
-	theme: 'recaps' | 'rich' | 'dark' | 'night' | 'dracula' | 'black' | 'luxury' | 'forest' | 'halloween' | 'coffee' | 'dim' | 'sunset';
+	theme: 'segra' | 'rich' | 'dark' | 'night' | 'dracula' | 'black' | 'luxury' | 'forest' | 'halloween' | 'coffee' | 'dim' | 'sunset';
 	resolution: '720p' | '1080p' | '1440p' | '4K';
 	frameRate: number;
 	rateControl: string;
@@ -51,7 +51,7 @@ export const initialState: State = {
 };
 
 export const initialSettings: Settings = {
-	theme: 'recaps',
+	theme: 'rich',
 	resolution: '720p',
 	frameRate: 30,
 	rateControl: 'CBR',

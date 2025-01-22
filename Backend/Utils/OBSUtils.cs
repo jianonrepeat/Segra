@@ -1,12 +1,12 @@
 ﻿using LibObs;
 using NAudio.Wave;
-using ReCaps.Backend.Services;
-using ReCaps.Models;
+using Segra.Backend.Services;
+using Segra.Models;
 using Serilog;
 using System.IO.Compression;
 using static LibObs.Obs;
 
-namespace ReCaps.Backend.Utils
+namespace Segra.Backend.Utils
 {
     public static class OBSUtils
     {
@@ -174,7 +174,7 @@ namespace ReCaps.Backend.Utils
                     throw new Exception("Unsupported Rate Control method.");
             }
 
-            videoEncoder = obs_video_encoder_create("jim_nvenc", "ReCaps Recorder", videoEncoderSettings, IntPtr.Zero);
+            videoEncoder = obs_video_encoder_create("jim_nvenc", "Segra Recorder", videoEncoderSettings, IntPtr.Zero);
             obs_data_release(videoEncoderSettings);
             obs_encoder_set_video(videoEncoder, obs_get_video());
 
@@ -373,11 +373,11 @@ namespace ReCaps.Backend.Utils
             }
 
             string zipPath = Path.Combine(currentDirectory, "obs.zip");
-            string apiUrl = "https://api.github.com/repos/Segergren/ReCaps/contents/obs.zip?ref=main";
+            string apiUrl = "https://api.github.com/repos/Segergren/Segra/contents/obs.zip?ref=main";
 
             using (var httpClient = new HttpClient())
             {
-                httpClient.DefaultRequestHeaders.Add("User-Agent", "ReCaps");
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "Segra");
                 httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3.json");
                 httpClient.DefaultRequestHeaders.Add("Authorization", "token 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");
 

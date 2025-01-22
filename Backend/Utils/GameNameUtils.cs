@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace ReCaps.Backend.Utils
+namespace Segra.Backend.Utils
 {
     internal static class GameNameUtils
     {

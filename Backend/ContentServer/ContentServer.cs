@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Web;
 
-namespace ReCaps.Backend.ContentServer
+namespace Segra.Backend.ContentServer
 {
     internal class ContentServer
     {

@@ -1,12 +1,12 @@
 ﻿using NAudio.CoreAudioApi;
-using ReCaps.Models;
+using Segra.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ReCaps.Backend.Utils
+namespace Segra.Backend.Utils
 {
     internal class AudioDeviceUtils
     {

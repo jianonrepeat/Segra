@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ReCaps.Backend.Audio
+namespace Segra.Backend.Audio
 {
     public class AudioDeviceWatcher : IMMNotificationClient, IDisposable
     {

@@ -1,4 +1,4 @@
-﻿using ReCaps.Models;
+﻿using Segra.Models;
 using Serilog;
 using System;
 using System.Diagnostics;
@@ -6,7 +6,7 @@ using System.Globalization;
 using System.IO;
 using System.Security.Cryptography;
 
-namespace ReCaps.Backend.Utils
+namespace Segra.Backend.Utils
 {
     internal class ContentUtils
     {

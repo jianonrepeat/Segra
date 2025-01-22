@@ -1,4 +1,4 @@
-﻿using ReCaps.Models;
+﻿using Segra.Models;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -7,11 +7,11 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace ReCaps.Backend.Utils
+namespace Segra.Backend.Utils
 {
     internal static class SettingsUtils
     {
-        public static readonly string SettingsFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ReCaps", "settings.json");
+        public static readonly string SettingsFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Segra", "settings.json");
 
         public static void SaveSettings()
         {

@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using System.Windows.Forms;
 
-using ReCaps.Models;
-using ReCaps.Backend.Utils;
+using Segra.Models;
+using Segra.Backend.Utils;
 using Serilog;
 
-namespace ReCaps.Backend.Utils
+namespace Segra.Backend.Utils
 {
     public static class MessageUtils
     {

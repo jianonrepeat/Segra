@@ -1,21 +1,21 @@
 using Photino.NET;
 using Photino.NET.Server;
-using ReCaps.Backend.ContentServer;
-using ReCaps.Backend.Utils;
-using ReCaps.Models;
+using Segra.Backend.ContentServer;
+using Segra.Backend.Utils;
+using Segra.Models;
 using Serilog;
 using System.Diagnostics;
 using System.Net;
 using Velopack;
 
-namespace ReCaps
+namespace Segra
 {
     class Program
     {
         public static bool hasLoadedInitialSettings = false;
         public static PhotinoWindow window { get; private set; }
         private static readonly string LogFilePath =
-          Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ReCaps", "logs.log");
+          Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Segra", "logs.log");
         private static NotifyIcon notifyIcon;
 
         [STAThread]
@@ -128,7 +128,7 @@ namespace ReCaps
                 });
 
                 // intentional space after name because of https://github.com/tryphotino/photino.NET/issues/106
-                window.SetTitle("ReCaps ");
+                window.SetTitle("Segra ");
 
                 window.WaitForClose();
             }
@@ -149,7 +149,7 @@ namespace ReCaps
             {
                 Icon = new Icon("icon.ico"),
                 Visible = true,
-                Text = "ReCaps"
+                Text = "Segra"
             };
 
             var contextMenu = new ContextMenuStrip();

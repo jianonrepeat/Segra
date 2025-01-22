@@ -1,12 +1,12 @@
-﻿using ReCaps.Backend.Utils;
+﻿using Segra.Backend.Utils;
 using Serilog;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using EventHook;
-using ReCaps.Models;
+using Segra.Models;
 using System;
 
-namespace ReCaps.Backend.Services
+namespace Segra.Backend.Services
 {
     public static class GameDetectionService
     {

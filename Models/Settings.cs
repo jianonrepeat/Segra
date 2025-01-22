@@ -1,5 +1,5 @@
-﻿using ReCaps.Backend.Audio;
-using ReCaps.Backend.Utils;
+﻿using Segra.Backend.Audio;
+using Segra.Backend.Utils;
 using Serilog;
 using Serilog.Core;
 using System;
@@ -8,7 +8,7 @@ using System.IO;
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
 
-namespace ReCaps.Models
+namespace Segra.Models
 {
     internal class Settings
     {
@@ -16,16 +16,16 @@ namespace ReCaps.Models
         public static Settings Instance => _instance;
         public bool _isBulkUpdating = false;
 
-        private string _contentFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "ReCaps").Replace("\\", "/");
-        private string _theme = "night";
-        private string _resolution = "720p";
-        private int _frameRate = 30;
-        private int _bitrate = 10;
-        private string _rateControl = "CBR";
+        private string _contentFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "Segra").Replace("\\", "/");
+        private string _theme = "rich";
+        private string _resolution = "1080p";
+        private int _frameRate = 60;
+        private int _bitrate = 40;
+        private string _rateControl = "VBR";
         private int _crfValue = 23;
         private int _cqLevel = 20;
         private string _encoder = "gpu";
-        private string _codec = "h256";
+        private string _codec = "h264";
         private int _storageLimit = 100;
         private string _inputDevice = string.Empty;
         private string _outputDevice = string.Empty;

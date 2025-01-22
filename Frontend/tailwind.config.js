@@ -39,7 +39,7 @@ export default {
       "nord",
       "sunset",
       {
-        recaps: {
+        segra: {
           primary: "#EFAF2B", // Gold
           secondary: "#14B3B2", // Druid
           accent: "#E85A5A", // Poppy

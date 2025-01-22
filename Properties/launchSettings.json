@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "ReCaps": {
+    "Segra": {
       "commandName": "Project",
       "commandLineArgs": "--debug",
       "nativeDebugging": true

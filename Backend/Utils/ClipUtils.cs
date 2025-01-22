@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using Serilog;
 using System.Globalization;
-using ReCaps.Models;
+using Segra.Models;
 
-namespace ReCaps.Backend.Utils
+namespace Segra.Backend.Utils
 {
     public static class ClipUtils
     {

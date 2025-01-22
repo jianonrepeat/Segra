@@ -13,6 +13,8 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<PackageIcon>icon.png</PackageIcon>
 		<ApplicationIcon>icon.ico</ApplicationIcon>
+		<AssemblyName>Segra</AssemblyName>
+		<RootNamespace>Segra</RootNamespace>
 	</PropertyGroup>
 
 	<ItemGroup>
