@@ -16,6 +16,7 @@ export default function Videos() {
       <h1 className="text-3xl font-bold mb-4">Clips</h1>
       {state.content.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+          {state.isCreatingClip && <ContentCard key={-1} type="clip" isLoading />}
           {state.content
             .filter((video) => video.type.toLocaleLowerCase() === 'clip')
             .map((video, index) => (

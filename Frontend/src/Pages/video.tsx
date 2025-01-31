@@ -601,13 +601,13 @@ export default function VideoComponent({video}: VideoProps) {
 										onContextMenu={(e) => handleSelectionContextMenu(e, sel.id)}
 									>
 										<div
+											className="text-neutral"
 											style={{
 												position: "absolute",
 												top: 0,
 												left: 0,
 												right: 0,
 												textAlign: "center",
-												color: "#fff",
 												fontSize: "12px",
 												userSelect: "none",
 												paddingTop: "2px",
@@ -683,22 +683,22 @@ export default function VideoComponent({video}: VideoProps) {
 				{video.type === "Video" && (
 					<div className="bg-base-300 text-neutral-content w-52 2xl:w-72 flex flex-col h-full pl-4 pr-1 pt-4">
 						<div className="overflow-y-scroll flex-1  mt-1 p-1">
-						{selections.map((sel, index) => (
-							<SelectionCard
-								key={sel.id}
-								selection={sel}
-								index={index}
-								moveCard={moveCard}
-								formatTime={formatTime}
-								isHovered={hoveredSelectionId === sel.id}
-								setHoveredSelectionId={setHoveredSelectionId}
-								removeSelection={removeSelection}
-							/>
-						))}
+							{selections.map((sel, index) => (
+								<SelectionCard
+									key={sel.id}
+									selection={sel}
+									index={index}
+									moveCard={moveCard}
+									formatTime={formatTime}
+									isHovered={hoveredSelectionId === sel.id}
+									setHoveredSelectionId={setHoveredSelectionId}
+									removeSelection={removeSelection}
+								/>
+							))}
 						</div>
 						<div className="bottom-0 border-base-200 bg-base-300 pt-2 pb-2 px-4 me-3">
 							<button
-								className="btn btn-secondary text-neutral-content w-full shadow-lg"
+								className="btn btn-secondary text-neutral w-full shadow-lg"
 								onClick={clearAllSelections}
 								disabled={selections.length === 0}
 							>

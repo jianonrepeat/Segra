@@ -1,14 +1,51 @@
-﻿import {useEffect} from 'react';
+﻿import {useEffect, useState} from 'react';
 import {useSettings, useSettingsUpdater} from '../Context/SettingsContext';
 import {sendMessageToBackend} from '../Utils/MessageUtils';
 import {themeChange} from 'theme-change';
 import {AudioDevice} from '../Models/types';
+import {supabase} from '../lib/supabase/client';
+import {FaDiscord} from 'react-icons/fa';
+import {useAuth} from '../Hooks/useAuth';
+import {useProfile} from '../Hooks/userProfile';
 
 export default function Settings() {
+	const {session} = useAuth();
+	const {data: profile, isLoading: profileLoading, error: profileError} = useProfile();
+	const [authInProgress, setAuthInProgress] = useState(false);
+	const [error, setError] = useState('');
+	const [email, setEmail] = useState('');
+	const [password, setPassword] = useState('');
+
+	// Handle OAuth callback and initial session check
+	useEffect(() => {
+		const handleAuthCallback = async () => {
+			try {
+				const urlParams = new URLSearchParams(window.location.search);
+				const code = urlParams.get('code');
+
+				if (code) {
+					setAuthInProgress(true);
+					const {error} = await supabase.auth.exchangeCodeForSession(code);
+
+					if (error) throw error;
+					// Clean URL after successful login
+					window.history.replaceState({}, document.title, window.location.pathname);
+				}
+			} catch (err) {
+				setError(err instanceof Error ? err.message : 'Authentication failed');
+			} finally {
+				setAuthInProgress(false);
+			}
+		};
+
+		handleAuthCallback();
+	}, []);
+
+	// Rest of your existing settings logic
 	const settings = useSettings();
 	const updateSettings = useSettingsUpdater();
 
-	const handleChange = (event: any) => {
+	const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
 		const {name, value} = event.target;
 		const numericalFields = ['frameRate', 'bitrate', 'storageLimit', 'keyframeInterval', 'crfValue', 'cqLevel'];
 		updateSettings({
@@ -17,13 +54,199 @@ export default function Settings() {
 	};
 
 	const handleBrowseClick = () => {
-		sendMessageToBackend('SetVideoLocation'); // Opens folder picker
+		sendMessageToBackend('SetVideoLocation');
 	};
 
 	useEffect(() => {
 		themeChange(false);
 	}, []);
 
+	// Updated Discord login handler
+	const handleDiscordLogin = async () => {
+		setAuthInProgress(true);
+		setError('');
+		try {
+			const {error} = await supabase.auth.signInWithOAuth({
+				provider: 'discord',
+				options: {
+					redirectTo: window.location.href,
+					queryParams: {prompt: 'consent'}
+				}
+			});
+
+			if (error) throw error;
+		} catch (err) {
+			setError(err instanceof Error ? err.message : 'Failed to start authentication');
+		} finally {
+			setAuthInProgress(false);
+		}
+	};
+
+	const handleEmailLogin = async (e: React.FormEvent) => {
+		e.preventDefault();
+		setAuthInProgress(true);
+		setError('');
+		try {
+			const {error} = await supabase.auth.signInWithPassword({email, password});
+			if (error) throw error;
+		} catch (err) {
+			setError(err instanceof Error ? err.message : 'Login failed');
+		} finally {
+			setAuthInProgress(false);
+		}
+	};
+
+	const handleLogout = async () => {
+		await supabase.auth.signOut();
+	};
+
+	// Auth UI components
+	const authSection = !session ? (
+		<div className="card bg-base-300 shadow-xl mb-8">
+			<div className="card-body">
+				<h2 className="card-title text-2xl font-bold mb-4 justify-center">Login to Segra</h2>
+
+				{error && <div className="alert alert-error mb-4">{error}</div>}
+
+				<button
+					onClick={handleDiscordLogin}
+					disabled={authInProgress}
+					className={`btn btn-primary w-full gap-2 ${authInProgress ? 'loading' : ''}`}
+				>
+					<FaDiscord className="w-5 h-5" />
+					{authInProgress ? 'Connecting...' : 'Continue with Discord'}
+				</button>
+
+				<div className="divider">or use email</div>
+
+				<form onSubmit={handleEmailLogin} className="space-y-4">
+					<div className="form-control">
+						<label className="label">
+							<span className="label-text">Email</span>
+						</label>
+						<input
+							type="email"
+							value={email}
+							onChange={(e) => setEmail(e.target.value)}
+							className="input input-bordered"
+							disabled={authInProgress}
+							required
+						/>
+					</div>
+
+					<div className="form-control">
+						<label className="label">
+							<span className="label-text">Password</span>
+						</label>
+						<input
+							type="password"
+							value={password}
+							onChange={(e) => setPassword(e.target.value)}
+							className="input input-bordered"
+							disabled={authInProgress}
+							required
+						/>
+					</div>
+
+					<button
+						type="submit"
+						disabled={authInProgress}
+						className={`btn btn-primary w-full ${authInProgress ? 'loading' : ''}`}
+					>
+						Sign in with Email
+					</button>
+				</form>
+			</div>
+		</div>
+	) : (
+		<div className="space-y-4">
+			<div className="flex items-center justify-between flex-wrap gap-4">
+				<div className="flex items-center gap-4 min-w-0">
+					{/* Avatar Container */}
+					<div className="relative w-28 h-28">
+						<div className="w-full h-full rounded-full overflow-hidden bg-base-200 bg-base-300 ring-4 ring-base-300">
+							{profile?.avatar_url ? (
+								<img
+									src={profile.avatar_url}
+									alt={`${profile.username}'s avatar`}
+									className="w-full h-full object-cover"
+									onError={(e) => {
+										(e.target as HTMLImageElement).src = '/default-avatar.png';
+									}}
+								/>
+							) : (
+								<div
+									className="w-full h-full bg-base-300 flex items-center justify-center"
+									aria-hidden="true"
+								>
+									<span className="text-2xl"></span>
+								</div>
+							)}
+						</div>
+					</div>
+
+					{/* Profile Info with Dropdown */}
+					<div className="min-w-0 flex-1">
+						<div className="flex items-center gap-2">
+							<h1 className="text-3xl font-bold truncate">
+								{profile?.username || 'Anonymous User'}
+							</h1>
+							<div className="dropdown dropdown-end" onClick={(e) => e.stopPropagation()}>
+								<div tabIndex={0} role="button" className="btn btn-ghost btn-xs p-1">
+									<svg fill="currentColor" height={20} width={20} viewBox="0 0 32.055 32.055">
+										<path d="M3.968,12.061C1.775,12.061,0,13.835,0,16.027c0,2.192,1.773,3.967,3.968,3.967c2.189,0,3.966-1.772,3.966-3.967 C7.934,13.835,6.157,12.061,3.968,12.061z M16.233,12.061c-2.188,0-3.968,1.773-3.968,3.965c0,2.192,1.778,3.967,3.968,3.967 s3.97-1.772,3.97-3.967C20.201,13.835,18.423,12.061,16.233,12.061z M28.09,12.061c-2.192,0-3.969,1.774-3.969,3.967 c0,2.19,1.774,3.965,3.969,3.965c2.188,0,3.965-1.772,3.965-3.965S30.278,12.061,28.09,12.061z"></path>
+									</svg>
+								</div>
+								<ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-box z-[999] w-52 p-2 shadow">
+									<li>
+										<a
+											onClick={() => {
+												(document.activeElement as HTMLElement).blur();
+												handleLogout();
+											}}
+											className={false ? 'disabled' : ''}
+											aria-busy={false}
+										>
+											{false ? 'Logging out...' : 'Logout'}
+										</a>
+									</li>
+								</ul>
+							</div>
+						</div>
+						<div className="flex gap-4 mt-2 text-base-content/70">
+							<span>{0} followers</span>
+							<span>{0} following</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			{/* Loading State */}
+			{profileLoading && (
+				<div className="mt-3 text-sm flex items-center gap-2">
+					<span className="loading loading-spinner loading-xs" />
+					Loading profile...
+				</div>
+			)}
+
+			{/* Error State */}
+			{profileError && (
+				<div
+					className="alert alert-error mt-3"
+					role="alert"
+					aria-live="assertive"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+					</svg>
+					<div>
+						<h3 className="font-bold">Profile load failed!</h3>
+						<div className="text-xs">{profileError.message || 'Unknown error occurred'}</div>
+					</div>
+				</div>
+			)}
+		</div>
+	);
 	// Helper function to check if the selected device is available
 	const isDeviceAvailable = (deviceId: string, devices: AudioDevice[]) => {
 		return devices.some((device) => device.id === deviceId);
@@ -39,6 +262,7 @@ export default function Settings() {
 
 	return (
 		<div className="p-5 space-y-6 rounded-lg">
+			{authSection}
 			<h1 className="text-3xl font-bold">Settings</h1>
 
 			{/* Theme Selection */}

@@ -56,6 +56,8 @@
 
 	<ItemGroup>
 	  <Folder Include="Frontend\public\" />
+	  <Folder Include="Frontend\src\lib\supabase\" />
+	  <Folder Include="Frontend\src\Hooks\" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -51,7 +51,7 @@ export const initialState: State = {
 };
 
 export const initialSettings: Settings = {
-	theme: 'rich',
+	theme: 'segra',
 	resolution: '720p',
 	frameRate: 30,
 	rateControl: 'CBR',

@@ -39,6 +39,8 @@ function App() {
 				return <Videos />;
 			case 'Clips':
 				return <Clips />;
+			case 'Highlights':
+				return <Clips />;
 			default:
 				return <Settings />;
 		}

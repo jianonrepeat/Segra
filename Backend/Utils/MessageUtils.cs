@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net.WebSockets;
+﻿using System.Net.WebSockets;
 using System.Net;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Text.Json;
-using System.Windows.Forms;
 
 using Segra.Models;
-using Segra.Backend.Utils;
 using Serilog;
+using System.Net.Http.Headers;
 
 namespace Segra.Backend.Utils
 {
@@ -44,6 +39,10 @@ namespace Segra.Backend.Utils
                         case "DeleteContent":
                             root.TryGetProperty("Parameters", out JsonElement deleteContentParameterElement);
                             await HandleDeleteContent(deleteContentParameterElement);
+                            break;
+                        case "UploadContent":
+                            root.TryGetProperty("Parameters", out JsonElement uploadContentParameterElement);
+                            await HandleUploadContent(uploadContentParameterElement);
                             break;
                         case "StartRecording":
                             await Task.Run(() =>
@@ -130,6 +129,77 @@ namespace Segra.Backend.Utils
                 Log.Information("Selections property not found in CreateClip message.");
             }
         }
+
+        private static async Task HandleUploadContent(JsonElement message)
+        {
+            // Check for required properties:
+            Log.Information(message.ToString());
+            if (message.TryGetProperty("FilePath", out JsonElement filePathElement) &&
+                message.TryGetProperty("JWT", out JsonElement jwtElement))
+            {
+                try
+                {
+                    string filePath = filePathElement.GetString();
+                    string jwt = jwtElement.GetString();
+
+                    string? game = message.TryGetProperty("Game", out JsonElement gameElement)
+                        ? gameElement.GetString()
+                        : null;
+
+                    string? title = message.TryGetProperty("Title", out JsonElement titleElement)
+                        ? titleElement.GetString()
+                        : null;
+
+                    string? description = message.TryGetProperty("Description", out JsonElement descriptionElement)
+                        ? descriptionElement.GetString()
+                        : null;
+
+                    using var httpClient = new HttpClient();
+                    using var formData = new MultipartFormDataContent();
+
+
+                    var fileBytes = await File.ReadAllBytesAsync(filePath);
+                    var fileContent = new ByteArrayContent(fileBytes);
+                    formData.Add(fileContent, "file", Path.GetFileName(filePath));
+
+                    if (!string.IsNullOrEmpty(game))
+                    {
+                        formData.Add(new StringContent(game), "game");
+                    }
+
+                    if (!string.IsNullOrEmpty(title))
+                    {
+                        formData.Add(new StringContent(title), "title");
+                    }
+
+                    if (!string.IsNullOrEmpty(description))
+                    {
+                        formData.Add(new StringContent(description), "description");
+                    }
+
+                    var request = new HttpRequestMessage(HttpMethod.Post, "https://upload.segra.tv")
+                    {
+                        Content = formData
+                    };
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+
+                    var response = await httpClient.SendAsync(request);
+                    response.EnsureSuccessStatusCode();
+
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                    Log.Information($"Upload successful. Server response:\n{responseBody}");
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"Upload failed: {ex.Message}");
+                }
+            }
+            else
+            {
+                Log.Error("Required properties (FilePath, JWT) are missing in the message.");
+            }
+        }
+
 
         private static async Task HandleDeleteContent(JsonElement message)
         {

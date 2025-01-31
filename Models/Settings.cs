@@ -17,8 +17,8 @@ namespace Segra.Models
         public bool _isBulkUpdating = false;
 
         private string _contentFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "Segra").Replace("\\", "/");
-        private string _theme = "rich";
-        private string _resolution = "1080p";
+        private string _theme = "segra";
+        private string _resolution;
         private int _frameRate = 60;
         private int _bitrate = 40;
         private string _rateControl = "VBR";
@@ -30,6 +30,11 @@ namespace Segra.Models
         private string _inputDevice = string.Empty;
         private string _outputDevice = string.Empty;
         private State _state = new State();
+
+        public Settings()
+        {
+            SetDefaultResolution();
+        }
 
         // Begin bulk update suppression
         public void BeginBulkUpdate()
@@ -49,6 +54,31 @@ namespace Segra.Models
             if (!_isBulkUpdating)
             {
                 MessageUtils.SendSettingsToFrontend();
+            }
+        }
+
+        private void SetDefaultResolution()
+        {
+            int screenHeight = 1080; // Fallback value
+            var primaryScreen = Screen.PrimaryScreen;
+
+            if (primaryScreen != null)
+            {
+                screenHeight = primaryScreen.Bounds.Height;
+            }
+
+            // Determine resolution based on height
+            if (screenHeight >= 2160)
+            {
+                _resolution = "4K";
+            }
+            else if (screenHeight >= 1440)
+            {
+                _resolution = "1440p";
+            }
+            else
+            {
+                _resolution = "1080p";
             }
         }
 
